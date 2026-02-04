@@ -2,10 +2,7 @@
 <html lang="en">
 <head>
 
-  <!-- Fix emoji encoding -->
   <meta charset="UTF-8">
-
-  <!-- Mobile scaling -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Read & Learn</title>
@@ -96,10 +93,6 @@
       transform: scale(0.96);
     }
 
-    button.hidden {
-      display: none;
-    }
-
     #status {
       font-size: clamp(16px, 4.5vw, 24px);
       margin-top: 15px;
@@ -120,7 +113,7 @@
 
   <div id="emoji"></div>
 
-  <button id="listenBtn" onclick="startListening()">🎤 Tap & Read</button>
+  <button id="listenBtn">🎤 Tap & Read</button>
 
   <div id="status"></div>
 
@@ -205,6 +198,8 @@ const emojiDiv = document.getElementById("emoji");
 const statusDiv = document.getElementById("status");
 const listenBtn = document.getElementById("listenBtn");
 
+listenBtn.addEventListener("click", startListening);
+
 const correctSound = document.getElementById("correctSound");
 const wrongSound = document.getElementById("wrongSound");
 
@@ -221,7 +216,6 @@ function showWord() {
   }
 
   const i = Math.floor(Math.random() * remaining.length);
-
   current = remaining.splice(i, 1)[0];
 
   wordDiv.textContent = current.word;
@@ -229,7 +223,8 @@ function showWord() {
   statusDiv.textContent = "";
 
   // Show button again
-  listenBtn.classList.remove("hidden");
+  listenBtn.style.display = "block";
+  listenBtn.disabled = false;
 }
 
 showWord();
@@ -248,7 +243,8 @@ const recognition = SpeechRecognition
 if (recognition) recognition.lang = "en-US";
 
 function startListening() {
-  if (!recognition) return;
+
+  if (!recognition || listenBtn.disabled) return;
 
   statusDiv.textContent = "🎧 Listening...";
   recognition.start();
@@ -268,15 +264,15 @@ if (recognition) {
 
       play(correctSound);
 
-      // Hide button during reward
-      listenBtn.classList.add("hidden");
+      // HARD hide button
+      listenBtn.style.display = "none";
+      listenBtn.disabled = true;
 
       wordDiv.textContent = "";
       emojiDiv.textContent = current.emoji;
 
       statusDiv.textContent = "🌟 Great job!";
 
-      // Wait 3s, then next word
       setTimeout(showWord, 3000);
 
     } else {
