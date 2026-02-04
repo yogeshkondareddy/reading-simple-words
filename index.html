@@ -12,7 +12,6 @@
 
   <style>
 
-    /* Reset */
     * {
       box-sizing: border-box;
     }
@@ -35,14 +34,13 @@
       height: 100vh;
 
       display: flex;
-      justify-content: center;   /* Vertical */
-      align-items: center;       /* Horizontal */
+      justify-content: center;
+      align-items: center;
 
       background: linear-gradient(#e3f2fd, #ffffff);
       text-align: center;
     }
 
-    /* Main app container */
     #app {
       width: 100%;
       max-width: 420px;
@@ -96,6 +94,10 @@
 
     button:active {
       transform: scale(0.96);
+    }
+
+    button.hidden {
+      display: none;
     }
 
     #status {
@@ -225,7 +227,9 @@ function showWord() {
   wordDiv.textContent = current.word;
   emojiDiv.textContent = "";
   statusDiv.textContent = "";
-  listenBtn.style.display = "block";
+
+  // Show button again
+  listenBtn.classList.remove("hidden");
 }
 
 showWord();
@@ -264,12 +268,15 @@ if (recognition) {
 
       play(correctSound);
 
+      // Hide button during reward
+      listenBtn.classList.add("hidden");
+
       wordDiv.textContent = "";
       emojiDiv.textContent = current.emoji;
 
       statusDiv.textContent = "🌟 Great job!";
-      listenBtn.style.display = "none";
 
+      // Wait 3s, then next word
       setTimeout(showWord, 3000);
 
     } else {
