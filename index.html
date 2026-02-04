@@ -118,7 +118,7 @@
 
   <div id="emoji"></div>
 
-  <button onclick="startListening()">🎤 Tap & Read</button>
+  <button id="listenBtn" onclick="startListening()">🎤 Tap & Read</button>
 
   <div id="status"></div>
 
@@ -201,6 +201,7 @@ let current = null;
 const wordDiv = document.getElementById("word");
 const emojiDiv = document.getElementById("emoji");
 const statusDiv = document.getElementById("status");
+const listenBtn = document.getElementById("listenBtn");
 
 const correctSound = document.getElementById("correctSound");
 const wrongSound = document.getElementById("wrongSound");
@@ -224,6 +225,7 @@ function showWord() {
   wordDiv.textContent = current.word;
   emojiDiv.textContent = "";
   statusDiv.textContent = "";
+  listenBtn.style.display = "block";
 }
 
 showWord();
@@ -266,6 +268,7 @@ if (recognition) {
       emojiDiv.textContent = current.emoji;
 
       statusDiv.textContent = "🌟 Great job!";
+      listenBtn.style.display = "none";
 
       setTimeout(showWord, 3000);
 
