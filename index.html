@@ -49,6 +49,28 @@
       justify-content: center;
     }
 
+    #scoreBox {
+      background: white;
+      border: 3px solid #4CAF50;
+      border-radius: 12px;
+      padding: 12px 20px;
+      margin-bottom: 20px;
+      font-size: clamp(18px, 5vw, 24px);
+      font-weight: bold;
+      color: #4CAF50;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    #starsContainer {
+      margin-top: 20px;
+      min-height: 40px;
+      font-size: clamp(24px, 6vw, 32px);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 5px;
+    }
+
     h1 {
       font-size: clamp(26px, 6vw, 40px);
       margin-bottom: 15px;
@@ -107,6 +129,8 @@
 
 <div id="app">
 
+  <div id="scoreBox">Score: 0</div>
+
   <h1>📖 Read & Learn</h1>
 
   <div id="word"></div>
@@ -116,6 +140,8 @@
   <button id="listenBtn">🎤 Tap & Read</button>
 
   <div id="status"></div>
+
+  <div id="starsContainer"></div>
 
 </div>
 
@@ -192,11 +218,14 @@ const words = [
 
 let remaining = [...words];
 let current = null;
+let score = 0;
 
 const wordDiv = document.getElementById("word");
 const emojiDiv = document.getElementById("emoji");
 const statusDiv = document.getElementById("status");
 const listenBtn = document.getElementById("listenBtn");
+const scoreBox = document.getElementById("scoreBox");
+const starsContainer = document.getElementById("starsContainer");
 
 listenBtn.addEventListener("click", startListening);
 
@@ -264,6 +293,15 @@ if (recognition) {
     if (spoken === expected) {
 
       play(correctSound);
+
+      // Update score
+      score++;
+      scoreBox.textContent = "Score: " + score;
+
+      // Add a star
+      const star = document.createElement("span");
+      star.textContent = "⭐";
+      starsContainer.appendChild(star);
 
       // Force word to stay visible
       wordDiv.textContent = current.word;
