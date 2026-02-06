@@ -179,31 +179,75 @@ const celebrationDiv = document.getElementById("celebration");
 const correctSound = document.getElementById("correctSound");
 const wrongSound = document.getElementById("wrongSound");
 
-// Create the maze path (single path with trees on sides)
+// Create U-shaped maze path
 function renderMaze() {
   const maze = [];
+  const height = 8; // Height of each vertical side
+  const width = 6;  // Width of the bottom
   
   // Top border
   maze.push("🌲🌲🌲🌲🌲🌲🌲🌲🌲🌲");
   
-  // Path rows (20 steps)
-  for (let i = 0; i < maxPosition; i++) {
+  // Down the left side (positions 0-7)
+  for (let i = 0; i < height; i++) {
     let row = "🌲";
     
-    if (i === position) {
-      row += position === maxPosition - 1 && gameWon ? "🎉" : (gameWon ? "😊" : "😊");
-    } else if (i < position) {
-      row += "✨"; // Trail behind
+    if (i === position && position < height) {
+      row += "😊";
+    } else if (i < position && position < height) {
+      row += "✨";
+    } else if (position >= height && i === height - 1) {
+      row += "✨";
     } else {
-      row += "  "; // Empty path ahead
+      row += "  ";
     }
     
-    row += "🌲";
+    row += "🌲🌲🌲🌲🌲🌲🌲🌲";
     maze.push(row);
   }
   
-  // Bottom border with finish
-  maze.push("🌲🏁🌲🌲🌲🌲🌲🌲🌲🌲");
+  // Across the bottom (positions 8-13)
+  let bottomRow = "🌲";
+  for (let i = 0; i < width; i++) {
+    const pos = height + i;
+    if (pos === position) {
+      bottomRow += "😊";
+    } else if (pos < position) {
+      bottomRow += "✨";
+    } else {
+      bottomRow += "  ";
+    }
+  }
+  bottomRow += "🌲🌲";
+  maze.push(bottomRow);
+  
+  // Up the right side (positions 14-20)
+  for (let i = height - 1; i >= 0; i--) {
+    let row = "🌲🌲🌲🌲🌲🌲🌲🌲";
+    
+    const pos = height + width + (height - 1 - i);
+    if (pos === position) {
+      row += position === maxPosition - 1 && gameWon ? "🎉" : "😊";
+    } else if (pos < position) {
+      row += "✨";
+    } else if (position > height + width - 1 && i === height - 1) {
+      row += "✨";
+    } else {
+      row += "  ";
+    }
+    
+    row += "🌲";
+    
+    // Add finish flag at the top right
+    if (i === 0) {
+      row = row.slice(0, -1) + "🏁";
+    }
+    
+    maze.push(row);
+  }
+  
+  // Bottom border
+  maze.push("🌲🌲🌲🌲🌲🌲🌲🌲🌲🌲");
   
   mazeContainer.innerHTML = maze.map(row => 
     `<div class="maze-row">${row}</div>`
