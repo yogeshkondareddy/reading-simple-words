@@ -1,262 +1,3 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Falling Math</title>
-  <style>
-    :root { color-scheme: light; }
-    html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
-    body { background: #0b1220; color: #e9eefc; display: grid; place-items: center; padding: 14px; }
-
-    .menu-btn {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: rgba(255,255,255,0.10);
-      color: #e9eefc;
-      border: 1px solid rgba(255,255,255,0.14);
-      border-radius: 12px;
-      padding: 10px 16px;
-      font-weight: 700;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-block;
-      z-index: 1000;
-    }
-
-    .menu-btn:hover {
-      background: rgba(255,255,255,0.14);
-    }
-
-    .menu-btn:active {
-      transform: translateY(1px);
-    }
-
-    .wrap {
-      width: min(920px, 100%);
-      display: grid;
-      gap: 12px;
-    }
-
-    .topbar {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .stats {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-      font-weight: 600;
-    }
-
-    .pill {
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.10);
-      padding: 8px 10px;
-      border-radius: 999px;
-      display: inline-flex;
-      gap: 8px;
-      align-items: center;
-      backdrop-filter: blur(6px);
-    }
-
-    .controls {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
-    button, select {
-      background: rgba(255,255,255,0.10);
-      color: #e9eefc;
-      border: 1px solid rgba(255,255,255,0.14);
-      border-radius: 12px;
-      padding: 10px 12px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    button:hover, select:hover { background: rgba(255,255,255,0.14); }
-    button:active { transform: translateY(1px); }
-    button[disabled] { opacity: 0.55; cursor: not-allowed; }
-
-    .gamebox {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      background: radial-gradient(1200px 500px at 50% 0%, rgba(120,160,255,0.16), transparent 60%),
-                  linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
-      border-radius: 18px;
-      border: 1px solid rgba(255,255,255,0.12);
-      overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-      min-height: 320px;
-    }
-
-    canvas { width: 100%; height: 100%; display: block; }
-
-    .hud {
-      position: absolute;
-      left: 12px;
-      right: 12px;
-      bottom: 12px;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 10px;
-      align-items: center;
-      pointer-events: none; /* allow clicks through except input area below */
-    }
-
-    .inputRow {
-      pointer-events: auto;
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      background: rgba(0,0,0,0.28);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 14px;
-      padding: 10px;
-      backdrop-filter: blur(8px);
-    }
-
-    .prompt {
-      font-weight: 800;
-      white-space: nowrap;
-      opacity: 0.95;
-    }
-
-    input {
-      width: 140px;
-      max-width: 44vw;
-      background: rgba(255,255,255,0.10);
-      color: #e9eefc;
-      border: 1px solid rgba(255,255,255,0.16);
-      border-radius: 12px;
-      padding: 10px 12px;
-      font-size: 18px;
-      font-weight: 800;
-      outline: none;
-    }
-    input:focus { border-color: rgba(130,170,255,0.65); box-shadow: 0 0 0 3px rgba(130,170,255,0.15); }
-
-    .hint {
-      pointer-events: none;
-      justify-self: end;
-      background: rgba(0,0,0,0.28);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 14px;
-      padding: 10px 12px;
-      font-weight: 700;
-      opacity: 0.95;
-      backdrop-filter: blur(8px);
-      text-align: right;
-    }
-
-    .overlay {
-      position: absolute;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      background: rgba(0,0,0,0.45);
-      backdrop-filter: blur(8px);
-      padding: 18px;
-    }
-
-    .card {
-      width: min(560px, 92%);
-      background: rgba(15,22,40,0.85);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 18px;
-      padding: 18px 18px 14px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.55);
-    }
-
-    .card h1 { margin: 0 0 6px; font-size: 24px; }
-    .card p { margin: 6px 0 10px; line-height: 1.35; opacity: 0.92; }
-
-    .grid2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    @media (max-width: 520px) {
-      .grid2 { grid-template-columns: 1fr; }
-      .topbar { grid-template-columns: 1fr; }
-      .controls { justify-content: flex-start; }
-      input { width: 120px; }
-    }
-
-    .small { font-size: 13px; opacity: 0.85; }
-    .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-           background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.12);
-           padding: 2px 6px; border-radius: 8px; font-weight: 800; }
-  </style>
-</head>
-<body>
-<a href="index.html" class="menu-btn">🏠 Menu</a>
-  <div class="wrap">
-    <div class="topbar">
-      <div class="stats">
-        <div class="pill">Score: <span id="score">0</span></div>
-        <div class="pill">Streak: <span id="streak">0</span></div>
-        <div class="pill">Level: <span id="level">1</span></div>
-        <div class="pill">Missed: <span id="missed">0</span></div>
-      </div>
-      <div class="controls">
-        <select id="difficulty" title="Difficulty">
-          <option value="easy">Easy ( + / − )</option>
-          <option value="medium">Medium ( + / − / × )</option>
-          <option value="hard">Hard ( + / − / × / ÷ )</option>
-        </select>
-        <select id="speedControl" title="Speed">
-          <option value="0.1">Snail</option>
-          <option value="0.25">Very Slow</option>
-          <option value="0.5">Slow</option>
-          <option value="0.75">Medium</option>
-          <option value="1" selected>Normal</option>
-          <option value="1.25">Fast</option>
-        </select>
-        <button id="btnStart">Start</button>
-        <button id="btnPause" disabled>Pause</button>
-        <button id="btnReset">Reset</button>
-      </div>
-    </div>
-
-    <div class="gamebox" id="gamebox">
-      <canvas id="cv"></canvas>
-
-      <div class="hud">
-        <div class="inputRow">
-          <div class="prompt">Answer:</div>
-          <input id="answer" inputmode="numeric" autocomplete="off" placeholder="Type…" />
-          <div class="small">Press <span class="kbd">Enter</span></div>
-        </div>
-        <div class="hint" id="hint">Type the answer for the lowest problem.</div>
-      </div>
-
-      <div class="overlay" id="overlay">
-        <div class="card">
-          <h1>Falling Math</h1>
-          <p>Solve the falling problems before they hit the ground. The game speeds up as you score.</p>
-          <div class="grid2">
-            <div class="pill">Controls</div>
-            <div class="pill small">
-              Type answer → <span class="kbd">Enter</span><br/>
-              Pause/Resume → <span class="kbd">P</span><br/>
-              Focus input → <span class="kbd">/</span>
-            </div>
-          </div>
-          <p class="small">Tip: On phones, tap the input box once and keep typing.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
 <script>
 (() => {
   const cv = document.getElementById('cv');
@@ -276,20 +17,26 @@
   const input = document.getElementById('answer');
   const overlay = document.getElementById('overlay');
 
-  // ----- Canvas sizing -----
+  /* ---------------- Canvas ---------------- */
+
   function resizeCanvas() {
     const rect = gamebox.getBoundingClientRect();
     const dpr = Math.max(1, Math.floor(window.devicePixelRatio || 1));
+
     cv.width = Math.floor(rect.width * dpr);
     cv.height = Math.floor(rect.height * dpr);
+
     cv.style.width = rect.width + 'px';
     cv.style.height = rect.height + 'px';
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in CSS pixels
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
+
   window.addEventListener('resize', resizeCanvas);
   resizeCanvas();
 
-  // ----- Game state -----
+  /* ---------------- Game State ---------------- */
+
   let running = false;
   let paused = false;
   let lastT = 0;
@@ -299,19 +46,27 @@
   let level = 1;
   let missed = 0;
 
-  // Difficulty parameters
-  function getDifficulty() {
-    const d = difficultySel.value;
-    if (d === 'easy') return { ops: ['+','-'], maxA: 10, maxB: 10, spawnBase: 1400, speedBase: 55 };
-    if (d === 'medium') return { ops: ['+','-','×'], maxA: 15, maxB: 12, spawnBase: 1200, speedBase: 70 };
-    return { ops: ['+','-','×','÷'], maxA: 20, maxB: 15, spawnBase: 1050, speedBase: 85 };
-  }
-
-  // Falling problems
   let problems = [];
   let spawnTimer = 0;
 
-  const groundY = () => (gamebox.getBoundingClientRect().height - 52);
+  const groundY = () =>
+    gamebox.getBoundingClientRect().height - 52;
+
+  /* ---------------- Difficulty ---------------- */
+
+  function getDifficulty() {
+    const d = difficultySel.value;
+
+    if (d === 'easy')
+      return { ops: ['+','-'], maxA: 10, maxB: 10, spawnBase: 1400, speedBase: 55 };
+
+    if (d === 'medium')
+      return { ops: ['+','-','×'], maxA: 15, maxB: 12, spawnBase: 1200, speedBase: 70 };
+
+    return { ops: ['+','-','×','÷'], maxA: 20, maxB: 15, spawnBase: 1050, speedBase: 85 };
+  }
+
+  /* ---------------- Utils ---------------- */
 
   function randInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -320,6 +75,8 @@
   function pickOp(ops) {
     return ops[Math.floor(Math.random() * ops.length)];
   }
+
+  /* ---------------- Problems ---------------- */
 
   function makeProblem() {
     const diff = getDifficulty();
@@ -332,61 +89,72 @@
       b = randInt(0, diff.maxB);
       ans = a + b;
       text = `${a} + ${b}`;
-    } else if (op === '-') {
+    }
+
+    else if (op === '-') {
       a = randInt(0, diff.maxA);
       b = randInt(0, diff.maxB);
-      // Keep mostly non-negative in easy/medium
-      if (difficultySel.value !== 'hard') {
-        if (b > a) [a, b] = [b, a];
+
+      if (difficultySel.value !== 'hard' && b > a) {
+        [a, b] = [b, a];
       }
+
       ans = a - b;
       text = `${a} − ${b}`;
-    } else if (op === '×') {
+    }
+
+    else if (op === '×') {
       a = randInt(0, diff.maxA);
       b = randInt(0, diff.maxB);
       ans = a * b;
       text = `${a} × ${b}`;
-    } else { // ÷
-      // Ensure integer division: a = b * k
-      b = randInt(1, Math.max(2, Math.floor(diff.maxB)));
+    }
+
+    else { // division
+      b = randInt(1, Math.max(2, diff.maxB));
       const k = randInt(0, Math.max(2, Math.floor(diff.maxA / 2)));
+
       a = b * k;
       ans = k;
       text = `${a} ÷ ${b}`;
     }
 
     const rect = gamebox.getBoundingClientRect();
-    const x = randInt(70, Math.max(71, Math.floor(rect.width - 70)));
-    const y = -20;
+
+    const x = randInt(
+      70,
+      Math.max(71, Math.floor(rect.width - 70))
+    );
 
     return {
-      id: crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2),
+      id: crypto.randomUUID?.() || String(Math.random()).slice(2),
       text,
       ans,
       x,
-      y,
+      y: -20,
       vy: 0,
-      born: performance.now(),
-      flash: 0,      // for correct/incorrect feedback
-      state: 'fall', // 'fall' | 'good' | 'bad'
+      flash: 0,
+      state: 'fall'
     };
   }
 
   function currentSpeed() {
     const diff = getDifficulty();
-    const speedMultiplier = parseFloat(document.getElementById('speedControl').value);
-    // Speed increases with level
-    return (diff.speedBase + (level - 1) * 12) * speedMultiplier;
+    const mult = parseFloat(speedControl.value);
+
+    return (diff.speedBase + (level - 1) * 12) * mult;
   }
 
   function spawnIntervalMs() {
     const diff = getDifficulty();
-    const speedMultiplier = parseFloat(document.getElementById('speedControl').value);
-    // Spawns faster as level increases (down to a floor)
-    const baseInterval = Math.max(520, diff.spawnBase - (level - 1) * 90);
-    // Don't adjust spawn rate based on speed - keep it constant
-    return baseInterval;
+
+    return Math.max(
+      520,
+      diff.spawnBase - (level - 1) * 90
+    );
   }
+
+  /* ---------------- HUD ---------------- */
 
   function updateHUD() {
     elScore.textContent = score;
@@ -394,14 +162,20 @@
     elLevel.textContent = level;
     elMissed.textContent = missed;
 
-    // Show the lowest (closest to ground) problem hint
-    if (problems.length === 0) {
+    if (!problems.length) {
       elHint.textContent = 'Waiting for problems…';
-    } else {
-      const lowest = problems.reduce((p, c) => (c.y > p.y ? c : p), problems[0]);
-      elHint.textContent = `Lowest: ${lowest.text}`;
+      return;
     }
+
+    const lowest = problems.reduce(
+      (p, c) => (c.y > p.y ? c : p),
+      problems[0]
+    );
+
+    elHint.textContent = `Lowest: ${lowest.text}`;
   }
+
+  /* ---------------- Reset / Start ---------------- */
 
   function resetState() {
     running = false;
@@ -417,277 +191,289 @@
     spawnTimer = 0;
 
     input.value = '';
-    btnPause.textContent = 'Pause';
+
     btnPause.disabled = true;
+    btnPause.textContent = 'Pause';
 
     overlay.style.display = 'grid';
+
     updateHUD();
-    draw(); // clear screen
+    draw();
   }
 
   function startGame() {
     if (running) return;
+
     running = true;
     paused = false;
+
     overlay.style.display = 'none';
     btnPause.disabled = false;
     btnStart.disabled = true;
-    input.focus({ preventScroll: true });
+
+    input.focus();
+
     requestAnimationFrame(loop);
   }
 
   function togglePause() {
     if (!running) return;
+
     paused = !paused;
+
     btnPause.textContent = paused ? 'Resume' : 'Pause';
+
     if (!paused) {
       lastT = 0;
       requestAnimationFrame(loop);
-      input.focus({ preventScroll: true });
+      input.focus();
     }
   }
 
   function gameOver() {
     running = false;
-    paused = false;
+
     btnStart.disabled = false;
     btnPause.disabled = true;
+
     overlay.style.display = 'grid';
+
     overlay.querySelector('h1').textContent = 'Game Over';
-    overlay.querySelector('p').textContent = `Final score: ${score}. Press Start to play again.`;
+    overlay.querySelector('p').textContent =
+      `Final score: ${score}. Press Start to play again.`;
   }
 
-  // ----- Answer checking -----
-  function checkAnswer(value) {
+  /* ---------------- Answer ---------------- */
+
+  function checkAnswer(val) {
     if (!running || paused) return;
-    const trimmed = String(value).trim();
-    if (trimmed === '' || !/^-?\d+$/.test(trimmed)) return;
 
-    const guess = Number(trimmed);
+    const t = String(val).trim();
 
-    // Match the lowest (most urgent) problem first:
-    if (problems.length === 0) return;
-    const lowestIndex = problems.reduce((bestIdx, p, i) => (p.y > problems[bestIdx].y ? i : bestIdx), 0);
-    const target = problems[lowestIndex];
+    if (!/^-?\d+$/.test(t)) return;
+
+    if (!problems.length) return;
+
+    const guess = Number(t);
+
+    const idx = problems.reduce(
+      (b, p, i) => (p.y > problems[b].y ? i : b),
+      0
+    );
+
+    const target = problems[idx];
 
     if (guess === target.ans) {
-      // correct
+
       target.state = 'good';
-      target.flash = 1.0;
-      // scoring: base + streak bonus + level bonus
+      target.flash = 1;
+
       score += 10 + Math.min(25, streak * 2) + Math.floor((level - 1) * 1.5);
-      streak += 1;
 
-      // level up every N correct answers
-      const nextLevelAt = 10 + (level - 1) * 3; // 10,13,16,...
-      if (streak % nextLevelAt === 0) level += 1;
+      streak++;
 
-      // remove after a short "pop"
+      const next = 10 + (level - 1) * 3;
+
+      if (streak % next === 0) level++;
+
       setTimeout(() => {
         problems = problems.filter(p => p !== target);
         updateHUD();
       }, 120);
 
-      input.value = '';
     } else {
-      // wrong
+
       target.state = 'bad';
-      target.flash = 1.0;
+      target.flash = 1;
+
       streak = 0;
-      // small penalty
       score = Math.max(0, score - 3);
-      input.value = '';
     }
+
+    input.value = '';
     updateHUD();
   }
 
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      checkAnswer(input.value);
-    }
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') checkAnswer(input.value);
   });
 
-  // Make it easy to refocus input
-  window.addEventListener('keydown', (e) => {
+  window.addEventListener('keydown', e => {
     if (e.key.toLowerCase() === 'p') togglePause();
-    if (e.key === '/') { e.preventDefault(); input.focus({ preventScroll: true }); }
-  });
 
-  // Keep input focused when tapping game area (mobile friendly)
-  gamebox.addEventListener('pointerdown', () => {
-    if (running && !paused) input.focus({ preventScroll: true });
-  });
-
-  // ----- Buttons -----
-  btnStart.addEventListener('click', () => {
-    // If overlay shows game over, reset first for a clean start
-    if (!running && problems.length === 0 && score === 0 && streak === 0) {
-      // already reset
+    if (e.key === '/') {
+      e.preventDefault();
+      input.focus();
     }
-    startGame();
   });
 
-  btnPause.addEventListener('click', togglePause);
+  gamebox.addEventListener('pointerdown', () => {
+    if (running && !paused) input.focus();
+  });
 
-  btnReset.addEventListener('click', () => {
+  /* ---------------- Buttons ---------------- */
+
+  btnStart.onclick = startGame;
+  btnPause.onclick = togglePause;
+
+  btnReset.onclick = () => {
     btnStart.disabled = false;
     resetState();
-  });
+  };
 
-  difficultySel.addEventListener('change', () => {
-    // If playing, keep going but clear current problems for fairness
+  difficultySel.onchange = () => {
     if (running) {
       problems = [];
       spawnTimer = 0;
       updateHUD();
     }
-  });
+  };
 
-  // ----- Main loop -----
+  /* ---------------- Main Loop ---------------- */
+
   function loop(t) {
     if (!running || paused) return;
+
     if (!lastT) lastT = t;
-    const dt = Math.min(0.033, (t - lastT) / 1000); // seconds, clamp for stability
+
+    const dt = Math.min(0.033, (t - lastT) / 1000);
     lastT = t;
 
-    // spawn
-    spawnTimer += (t - (t - dt * 1000));
-    // Use dt in ms accumulation
+    /* Spawn (FIXED: only once) */
     spawnTimer += dt * 1000;
+
     while (spawnTimer >= spawnIntervalMs()) {
       spawnTimer -= spawnIntervalMs();
       problems.push(makeProblem());
     }
 
-    // update problems
+    /* Update */
+
     const gY = groundY();
     const speed = currentSpeed();
 
     for (const p of problems) {
+
       if (p.state === 'fall') {
+
         p.vy = speed;
         p.y += p.vy * dt;
 
-        // hit ground
         if (p.y >= gY) {
           p.y = gY;
           p.state = 'bad';
-          p.flash = 1.0;
-          missed += 1;
+          p.flash = 1;
+
+          missed++;
           streak = 0;
         }
+
       } else {
-        // decay flash
         p.flash = Math.max(0, p.flash - dt * 3.5);
       }
     }
 
-    // remove ground-hit problems after a short time
-    problems = problems.filter(p => !(p.state === 'bad' && p.y >= gY && p.flash <= 0.01));
+    problems = problems.filter(
+      p => !(p.state === 'bad' && p.y >= gY && p.flash <= 0.01)
+    );
 
     updateHUD();
     draw();
 
-    if (lives <= 0) {
-      gameOver();
-      return;
-    }
-
     requestAnimationFrame(loop);
   }
 
-  // ----- Drawing -----
-  function draw() {
-    const rect = gamebox.getBoundingClientRect();
-    const W = rect.width, H = rect.height;
+  /* ---------------- Drawing ---------------- */
 
-    // background
+  function draw() {
+    const r = gamebox.getBoundingClientRect();
+
+    const W = r.width;
+    const H = r.height;
+
     ctx.clearRect(0, 0, W, H);
 
-    // subtle stars
-    ctx.globalAlpha = 0.12;
-    for (let i = 0; i < 30; i++) {
-      const x = (i * 73) % W;
-      const y = (i * 41) % H;
-      ctx.fillRect(x, y, 2, 2);
-    }
-    ctx.globalAlpha = 1;
-
-    // ground line
     const gY = groundY();
-    ctx.globalAlpha = 0.65;
+
+    ctx.globalAlpha = 0.6;
+
     ctx.beginPath();
     ctx.moveTo(0, gY + 26);
     ctx.lineTo(W, gY + 26);
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
     ctx.lineWidth = 2;
-    ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+
     ctx.stroke();
     ctx.globalAlpha = 1;
 
-    // draw problems
     for (const p of problems) {
-      const padX = 14, padY = 10;
-      ctx.font = '800 18px system-ui, -apple-system, Segoe UI, Roboto, Arial';
-      const textW = ctx.measureText(p.text).width;
-      const boxW = textW + padX * 2;
-      const boxH = 44;
 
-      // color by state
-      let bg = 'rgba(255,255,255,0.10)';
-      let border = 'rgba(255,255,255,0.18)';
-      if (p.state === 'good') { bg = 'rgba(90, 220, 140, 0.22)'; border = 'rgba(90, 220, 140, 0.55)'; }
-      if (p.state === 'bad')  { bg = 'rgba(255, 95, 95, 0.22)'; border = 'rgba(255, 95, 95, 0.55)'; }
+      const padX = 14;
+      const padY = 10;
 
-      // flash effect
-      const flash = p.flash || 0;
-      const lift = (p.state !== 'fall') ? (1 - flash) * 10 : 0;
+      ctx.font = '800 18px system-ui';
 
-      const x = Math.min(Math.max(p.x - boxW / 2, 10), W - boxW - 10);
-      const y = p.y - lift;
+      const w = ctx.measureText(p.text).width + padX * 2;
+      const h = 44;
 
-      // box
-      roundRect(ctx, x, y, boxW, boxH, 14);
+      let bg = 'rgba(255,255,255,0.1)';
+      let br = 'rgba(255,255,255,0.18)';
+
+      if (p.state === 'good') {
+        bg = 'rgba(90,220,140,0.22)';
+        br = 'rgba(90,220,140,0.55)';
+      }
+
+      if (p.state === 'bad') {
+        bg = 'rgba(255,95,95,0.22)';
+        br = 'rgba(255,95,95,0.55)';
+      }
+
+      const x = Math.min(
+        Math.max(p.x - w / 2, 10),
+        W - w - 10
+      );
+
+      const y = p.y;
+
+      roundRect(ctx, x, y, w, h, 14);
+
       ctx.fillStyle = bg;
       ctx.fill();
-      ctx.strokeStyle = border;
+
+      ctx.strokeStyle = br;
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      // text
-      ctx.fillStyle = 'rgba(233,238,252,0.98)';
+      ctx.fillStyle = '#e9eefc';
       ctx.textBaseline = 'middle';
-      ctx.fillText(p.text, x + padX, y + boxH / 2);
 
-      // small "!" when close to ground
-      const danger = (gY - p.y) < 90 && p.state === 'fall';
-      if (danger) {
-        ctx.globalAlpha = 0.95;
-        ctx.font = '900 16px system-ui';
-        ctx.fillStyle = 'rgba(255, 210, 90, 0.95)';
-        ctx.fillText('!', x + boxW - 18, y + boxH / 2);
-        ctx.globalAlpha = 1;
-      }
+      ctx.fillText(p.text, x + padX, y + h / 2);
     }
   }
 
   function roundRect(ctx, x, y, w, h, r) {
-    const rr = Math.min(r, w/2, h/2);
+
+    const rr = Math.min(r, w / 2, h / 2);
+
     ctx.beginPath();
+
     ctx.moveTo(x + rr, y);
+
     ctx.arcTo(x + w, y, x + w, y + h, rr);
     ctx.arcTo(x + w, y + h, x, y + h, rr);
     ctx.arcTo(x, y + h, x, y, rr);
     ctx.arcTo(x, y, x + w, y, rr);
+
     ctx.closePath();
   }
 
-  // Start in reset state
-  resetState();
+  /* ---------------- Init ---------------- */
 
-  // If user presses Start while overlay is shown, enable button
+  resetState();
   btnStart.disabled = false;
+
 })();
 </script>
-</body>
-</html>
 
