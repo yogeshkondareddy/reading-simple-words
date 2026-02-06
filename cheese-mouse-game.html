@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Mouse & Cheese Reading Game</title>
+<title>Multiplication Mouse Game</title>
 
 <style>
 
@@ -43,6 +43,8 @@
     margin-bottom: 10px;
   }
 
+  /* Path */
+
   #path {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
@@ -70,20 +72,37 @@
     background: #ffd54f;
   }
 
-  #word {
-    font-size: 42px;
+  /* Question */
+
+  #question {
+    font-size: 36px;
     font-weight: bold;
     margin: 15px 0;
   }
 
+  /* Input */
+
+  input {
+    font-size: 22px;
+    padding: 10px;
+    width: 120px;
+    text-align: center;
+
+    border-radius: 8px;
+    border: 2px solid #4caf50;
+  }
+
   button {
     font-size: 20px;
-    padding: 12px 26px;
-    border-radius: 12px;
+    padding: 10px 24px;
+
+    border-radius: 10px;
     border: none;
 
     background: #4caf50;
     color: white;
+
+    margin-left: 10px;
 
     cursor: pointer;
   }
@@ -105,13 +124,19 @@
 
 <div id="game">
 
-  <h1>🐭 Help Mouse Reach the Cheese! 🧀</h1>
+  <h1>🐭 Math Mouse × 🧀</h1>
 
+  <!-- Path -->
   <div id="path"></div>
 
-  <div id="word"></div>
+  <!-- Question -->
+  <div id="question"></div>
 
-  <button id="listenBtn">🎤 Read</button>
+  <!-- Answer -->
+  <div>
+    <input id="answerInput" type="number" inputmode="numeric" />
+    <button id="checkBtn">✔ Check</button>
+  </div>
 
   <div id="status"></div>
 
@@ -125,24 +150,22 @@
 <script>
 
 /* ===============================
-   WORDS
-   =============================== */
-
-const words = [
-  "cat","dog","sun","ball","tree",
-  "milk","fish","book","run","red",
-  "blue","apple","car","star","frog"
-];
-
-
-/* ===============================
-   GAME SETTINGS
+   SETTINGS
    =============================== */
 
 const TOTAL_BLOCKS = 10;
+const MAX_NUM = 12;
+
+
+/* ===============================
+   STATE
+   =============================== */
 
 let position = 0;
-let currentWord = "";
+
+let num1 = 0;
+let num2 = 0;
+let correctAnswer = 0;
 
 
 /* ===============================
@@ -150,25 +173,28 @@ let currentWord = "";
    =============================== */
 
 const pathDiv = document.getElementById("path");
-const wordDiv = document.getElementById("word");
+const questionDiv = document.getElementById("question");
+const input = document.getElementById("answerInput");
+const checkBtn = document.getElementById("checkBtn");
 const statusDiv = document.getElementById("status");
-const listenBtn = document.getElementById("listenBtn");
 
 const jumpSound = document.getElementById("jumpSound");
 const wrongSound = document.getElementById("wrongSound");
 
-listenBtn.addEventListener("click", startListening);
+checkBtn.addEventListener("click", checkAnswer);
+input.addEventListener("keyup", e => {
+  if (e.key === "Enter") checkAnswer();
+});
 
 
 /* ===============================
-   SOUND HELPER
+   SOUND
    =============================== */
 
 function playSound(sound) {
   sound.pause();
   sound.currentTime = 0;
 
-  // Sync with next frame
   requestAnimationFrame(() => {
     sound.play();
   });
@@ -176,7 +202,7 @@ function playSound(sound) {
 
 
 /* ===============================
-   BUILD PATH
+   PATH
    =============================== */
 
 function buildPath() {
@@ -204,43 +230,40 @@ function buildPath() {
 
 
 /* ===============================
-   WORD HANDLING
+   QUESTION
    =============================== */
 
-function pickWord() {
-
-  const i = Math.floor(Math.random() * words.length);
-
-  currentWord = words[i];
-
-  wordDiv.textContent = currentWord;
+function randomNum() {
+  return Math.floor(Math.random() * MAX_NUM) + 1;
 }
 
 
-function nextTurn() {
+function newQuestion() {
 
-  pickWord();
-  buildPath();
+  num1 = randomNum();
+  num2 = randomNum();
+
+  correctAnswer = num1 * num2;
+
+  questionDiv.textContent =
+    `${num1} × ${num2} = ?`;
+
+  input.value = "";
+  input.focus();
 
   statusDiv.textContent = "";
-  listenBtn.disabled = false;
-  listenBtn.textContent = "🎤 Read";
 }
 
 
 /* ===============================
-   MOVE MOUSE (SYNCED)
+   MOVEMENT
    =============================== */
 
 function moveForward() {
 
   if (position < TOTAL_BLOCKS) {
-
-    // Move first
     position++;
     buildPath();
-
-    // Then play sound (synced)
     playSound(jumpSound);
   }
 }
@@ -249,109 +272,72 @@ function moveForward() {
 function moveBackward() {
 
   if (position > 0) {
-
     position--;
     buildPath();
-
     playSound(wrongSound);
   }
 }
 
 
 /* ===============================
-   SPEECH
+   CHECK ANSWER
    =============================== */
 
-const SpeechRecognition =
-  window.SpeechRecognition || window.webkitSpeechRecognition;
+function checkAnswer() {
 
-const recognition = SpeechRecognition
-  ? new SpeechRecognition()
-  : null;
+  const userAnswer = Number(input.value);
 
-if (recognition) recognition.lang = "en-US";
+  if (input.value === "") return;
 
 
-function startListening() {
+  /* CORRECT */
 
-  if (!recognition) {
-    alert("Use Chrome or Edge");
+  if (userAnswer === correctAnswer) {
+
+    moveForward();
+
+    statusDiv.textContent = "✅ Correct!";
+
+  }
+
+  /* WRONG */
+
+  else {
+
+    moveBackward();
+
+    statusDiv.textContent =
+      `❌ Wrong! Answer is ${correctAnswer}`;
+  }
+
+
+  /* WIN */
+
+  if (position === TOTAL_BLOCKS) {
+
+    questionDiv.textContent = "🎉 YOU WIN! 🎉";
+
+    statusDiv.textContent = "Mouse got the cheese! 🧀";
+
+    input.disabled = true;
+    checkBtn.disabled = true;
+
     return;
   }
 
-  statusDiv.textContent = "🎧 Listening...";
-  listenBtn.disabled = true;
-  listenBtn.textContent = "🎧 Listening...";
 
-  recognition.start();
-}
+  /* NEXT */
 
-
-if (recognition) {
-
-  recognition.onresult = function(e) {
-
-    const spoken = e.results[0][0].transcript
-      .toLowerCase()
-      .trim();
-
-    const expected = currentWord.toLowerCase();
-
-
-    if (spoken === expected) {
-
-      moveForward();
-
-      statusDiv.textContent = "✅ Correct! Hop forward!";
-
-    } else {
-
-      moveBackward();
-
-      statusDiv.textContent =
-        "❌ Try again (You said: " + spoken + ")";
-    }
-
-
-    if (position === TOTAL_BLOCKS) {
-
-      buildPath();
-
-      wordDiv.textContent = "🎉 YOU WIN! 🎉";
-
-      statusDiv.textContent = "Mouse got the cheese! 🧀";
-
-      listenBtn.disabled = true;
-
-      return;
-    }
-
-
-    setTimeout(nextTurn, 1200);
-  };
-
-
-  recognition.onerror = function(e) {
-
-    statusDiv.textContent = "⚠️ Try again";
-    listenBtn.disabled = false;
-    listenBtn.textContent = "🎤 Read";
-  };
-
-  recognition.onend = function() {
-    // Reset button if recognition ends without result
-    if (!listenBtn.disabled) {
-      listenBtn.textContent = "🎤 Read";
-    }
-  };
+  setTimeout(newQuestion, 1000);
 }
 
 
 /* ===============================
-   START GAME
+   START
    =============================== */
 
-nextTurn();
+buildPath();
+newQuestion();
 
 </script>
 
