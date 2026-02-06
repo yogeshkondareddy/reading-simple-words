@@ -214,6 +214,12 @@
           <option value="medium">Medium ( + / − / × )</option>
           <option value="hard">Hard ( + / − / × / ÷ )</option>
         </select>
+        <select id="speedControl" title="Speed">
+          <option value="0.5">Slow (50%)</option>
+          <option value="0.75">Medium (75%)</option>
+          <option value="1" selected>Normal (100%)</option>
+          <option value="1.25">Fast (125%)</option>
+        </select>
         <button id="btnStart">Start</button>
         <button id="btnPause" disabled>Pause</button>
         <button id="btnReset">Reset</button>
@@ -369,8 +375,9 @@
 
   function currentSpeed() {
     const diff = getDifficulty();
+    const speedMultiplier = parseFloat(document.getElementById('speedControl').value);
     // Speed increases with level
-    return diff.speedBase + (level - 1) * 12;
+    return (diff.speedBase + (level - 1) * 12) * speedMultiplier;
   }
 
   function spawnIntervalMs() {
