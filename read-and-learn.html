@@ -38,6 +38,30 @@
       text-align: center;
     }
 
+    .menu-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .menu-btn:hover {
+      background: #45a049;
+    }
+
+    .menu-btn:active {
+      transform: scale(0.96);
+    }
+
     #app {
       width: 100%;
       max-width: 420px;
@@ -130,18 +154,15 @@
       padding: 8px 16px;
       border: 2px solid #4CAF50;
       border-radius: 8px;
-      display: inline-block;
-    }
-
-    .nav-link:hover {
-      background: #4CAF50;
-      color: white;
+      display: none;
     }
 
   </style>
 </head>
 
 <body>
+
+<a href="index.html" class="menu-btn">🏠 Menu</a>
 
 <div id="app">
 
