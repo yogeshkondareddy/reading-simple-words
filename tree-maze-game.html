@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tree Maze Reading Game</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(#e8f5e9, #ffffff);
+      text-align: center;
+      min-height: 100vh;
+    }
+
+    #app {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: clamp(24px, 5vw, 36px);
+      color: #2e7d32;
+      margin-bottom: 20px;
+    }
+
+    #scoreBox {
+      background: white;
+      border: 3px solid #4CAF50;
+      border-radius: 12px;
+      padding: 12px 20px;
+      margin-bottom: 20px;
+      font-size: clamp(16px, 4vw, 20px);
+      font-weight: bold;
+      color: #4CAF50;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    #mazeContainer {
+      background: white;
+      border: 3px solid #4CAF50;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      font-size: clamp(20px, 4vw, 28px);
+      line-height: 1.6;
+      font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", monospace;
+      overflow-x: auto;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .maze-row {
+      white-space: nowrap;
+    }
+
+    .path {
+      color: #8bc34a;
+    }
+
+    .player {
+      font-size: 1.2em;
+    }
+
+    #wordSection {
+      background: white;
+      border: 3px solid #4CAF50;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    #word {
+      font-size: clamp(40px, 10vw, 60px);
+      font-weight: bold;
+      margin: 15px 0;
+      color: #2e7d32;
+    }
+
+    button {
+      font-size: clamp(18px, 4vw, 24px);
+      padding: 14px 32px;
+      border-radius: 14px;
+      border: none;
+      background: #4CAF50;
+      color: white;
+      margin: 10px;
+      cursor: pointer;
+      min-width: 200px;
+    }
+
+    button:active {
+      transform: scale(0.96);
+    }
+
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    #status {
+      font-size: clamp(16px, 4vw, 22px);
+      margin-top: 15px;
+      min-height: 30px;
+      padding: 10px;
+      font-weight: bold;
+    }
+
+    .nav-link {
+      margin-top: 20px;
+      font-size: clamp(14px, 3.5vw, 18px);
+      color: #4CAF50;
+      text-decoration: none;
+      padding: 8px 16px;
+      border: 2px solid #4CAF50;
+      border-radius: 8px;
+      display: inline-block;
+    }
+
+    .nav-link:hover {
+      background: #4CAF50;
+      color: white;
+    }
+
+    #celebration {
+      font-size: clamp(60px, 15vw, 100px);
+      margin: 20px 0;
+      min-height: 80px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <h1>🌲 Tree Maze Reading Game 🌲</h1>
+  
+  <div id="scoreBox">Position: 0 / 20</div>
+  
+  <div id="mazeContainer"></div>
+  
+  <div id="celebration"></div>
+  
+  <div id="wordSection">
+    <div id="word"></div>
+    <button id="listenBtn">🎤 Tap & Read</button>
+    <div id="status"></div>
+  </div>
+  
+  <a href="index.html" class="nav-link">📖 Back to Read & Learn</a>
+</div>
+
+<audio id="correctSound" src="correct.mp3" preload="auto"></audio>
+<audio id="wrongSound" src="wrong.mp3" preload="auto"></audio>
+
+<script>
+const words = [
+  "cat", "dog", "sun", "moon", "tree", "star", "fish", "bird",
+  "book", "ball", "car", "bus", "red", "blue", "run", "jump",
+  "happy", "love", "home", "play", "eat", "sleep", "walk", "read"
+];
+
+let position = 0;
+const maxPosition = 20;
+let currentWord = "";
+let gameWon = false;
+
+const mazeContainer = document.getElementById("mazeContainer");
+const wordDiv = document.getElementById("word");
+const statusDiv = document.getElementById("status");
+const listenBtn = document.getElementById("listenBtn");
+const scoreBox = document.getElementById("scoreBox");
+const celebrationDiv = document.getElementById("celebration");
+
+const correctSound = document.getElementById("correctSound");
+const wrongSound = document.getElementById("wrongSound");
+
+// Create the maze path (single path with trees on sides)
+function renderMaze() {
+  const maze = [];
+  
+  // Top border
+  maze.push("🌲🌲🌲🌲🌲🌲🌲🌲🌲🌲");
+  
+  // Path rows (20 steps)
+  for (let i = 0; i < maxPosition; i++) {
+    let row = "🌲";
+    
+    if (i === position) {
+      row += position === maxPosition - 1 && gameWon ? "🎉" : (gameWon ? "😊" : "😊");
+    } else if (i < position) {
+      row += "✨"; // Trail behind
+    } else {
+      row += "  "; // Empty path ahead
+    }
+    
+    row += "🌲";
+    maze.push(row);
+  }
+  
+  // Bottom border with finish
+  maze.push("🌲🏁🌲🌲🌲🌲🌲🌲🌲🌲");
+  
+  mazeContainer.innerHTML = maze.map(row => 
+    `<div class="maze-row">${row}</div>`
+  ).join("");
+}
+
+function play(sound) {
+  sound.pause();
+  sound.currentTime = 0;
+  sound.play();
+}
+
+function showWord() {
+  if (gameWon) return;
+  
+  const randomIndex = Math.floor(Math.random() * words.length);
+  currentWord = words[randomIndex];
+  wordDiv.textContent = currentWord;
+  statusDiv.textContent = "";
+  listenBtn.disabled = false;
+}
+
+function updateScore() {
+  scoreBox.textContent = `Position: ${position} / ${maxPosition}`;
+}
+
+function checkWin() {
+  if (position >= maxPosition) {
+    gameWon = true;
+    celebrationDiv.textContent = "🎉🎊🏆";
+    statusDiv.textContent = "🌟 You reached the end! Amazing! 🌟";
+    wordDiv.textContent = "";
+    listenBtn.style.display = "none";
+    renderMaze();
+  }
+}
+
+listenBtn.addEventListener("click", startListening);
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const recognition = SpeechRecognition ? new SpeechRecognition() : null;
+
+if (recognition) {
+  recognition.lang = "en-US";
+  
+  recognition.onresult = function(event) {
+    const spoken = event.results[0][0].transcript.toLowerCase().trim();
+    const expected = currentWord.toLowerCase();
+    
+    if (spoken === expected) {
+      play(correctSound);
+      position = Math.min(position + 1, maxPosition);
+      statusDiv.textContent = "✅ Correct! Moving forward! 😊";
+      updateScore();
+      renderMaze();
+      checkWin();
+      
+      if (!gameWon) {
+        setTimeout(showWord, 2000);
+      }
+    } else {
+      play(wrongSound);
+      if (position > 0) {
+        position--;
+        statusDiv.textContent = `❌ Wrong! Moving back! 😢 (You said: ${spoken})`;
+      } else {
+        statusDiv.textContent = `❌ Try again! 😢 (You said: ${spoken})`;
+      }
+      updateScore();
+      renderMaze();
+    }
+  };
+  
+  recognition.onerror = function() {
+    play(wrongSound);
+    statusDiv.textContent = "⚠️ Couldn't hear you. Try again!";
+  };
+}
+
+function startListening() {
+  if (!recognition || listenBtn.disabled || gameWon) return;
+  
+  statusDiv.textContent = "🎧 Listening...";
+  listenBtn.disabled = true;
+  recognition.start();
+}
+
+// Initialize game
+renderMaze();
+showWord();
+updateScore();
+</script>
+
+</body>
+</html>
