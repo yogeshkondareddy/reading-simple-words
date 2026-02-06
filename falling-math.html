@@ -383,8 +383,10 @@
     const diff = getDifficulty();
     const speedMultiplier = parseFloat(document.getElementById('speedControl').value);
     // Spawns faster as level increases (down to a floor)
-    // Divide by speed multiplier to slow down spawning when speed is reduced
-    return Math.max(520, diff.spawnBase - (level - 1) * 90) / speedMultiplier;
+    // When speed is slower, spawn less frequently (longer interval)
+    const baseInterval = Math.max(520, diff.spawnBase - (level - 1) * 90);
+    // For slower speeds, increase the interval proportionally
+    return baseInterval / Math.max(speedMultiplier, 0.5);
   }
 
   function updateHUD() {
