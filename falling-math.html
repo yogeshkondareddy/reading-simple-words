@@ -205,7 +205,6 @@
         <div class="pill">Score: <span id="score">0</span></div>
         <div class="pill">Streak: <span id="streak">0</span></div>
         <div class="pill">Level: <span id="level">1</span></div>
-        <div class="pill">Lives: <span id="lives">3</span></div>
         <div class="pill">Missed: <span id="missed">0</span></div>
       </div>
       <div class="controls">
@@ -267,7 +266,6 @@
   const elScore = document.getElementById('score');
   const elStreak = document.getElementById('streak');
   const elLevel = document.getElementById('level');
-  const elLives = document.getElementById('lives');
   const elMissed = document.getElementById('missed');
   const elHint = document.getElementById('hint');
 
@@ -299,7 +297,6 @@
   let score = 0;
   let streak = 0;
   let level = 1;
-  let lives = 3;
   let missed = 0;
 
   // Difficulty parameters
@@ -394,7 +391,6 @@
     elScore.textContent = score;
     elStreak.textContent = streak;
     elLevel.textContent = level;
-    elLives.textContent = lives;
     elMissed.textContent = missed;
 
     // Show the lowest (closest to ground) problem hint
@@ -414,7 +410,6 @@
     score = 0;
     streak = 0;
     level = 1;
-    lives = 3;
     missed = 0;
 
     problems = [];
@@ -578,7 +573,6 @@
           p.state = 'bad';
           p.flash = 1.0;
           missed += 1;
-          lives -= 1;
           streak = 0;
         }
       } else {
