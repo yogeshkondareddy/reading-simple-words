@@ -168,6 +168,8 @@ let num1 = 0;
 let num2 = 0;
 let correctAnswer = 0;
 
+let gameOver = false;
+
 
 /* ===============================
    ELEMENTS
@@ -184,6 +186,7 @@ const wrongSound = document.getElementById("wrongSound");
 const winSound = document.getElementById("winSound");
 
 checkBtn.addEventListener("click", checkAnswer);
+
 input.addEventListener("keyup", e => {
   if (e.key === "Enter") checkAnswer();
 });
@@ -216,14 +219,25 @@ function buildPath() {
     const block = document.createElement("div");
     block.className = "block";
 
+
+    /* Mouse (always visible, even at last cell) */
     if (i === position) {
       block.classList.add("mouse");
       block.textContent = "🐭";
     }
 
-    if (i === TOTAL_BLOCKS) {
+
+    /* Cheese (only if mouse is NOT here) */
+    if (i === TOTAL_BLOCKS && position !== TOTAL_BLOCKS) {
       block.classList.add("cheese");
       block.textContent = "🧀";
+    }
+
+
+    /* Both at finish (win state) */
+    if (i === TOTAL_BLOCKS && position === TOTAL_BLOCKS) {
+      block.classList.add("cheese");
+      block.textContent = "🐭🧀";
     }
 
     pathDiv.appendChild(block);
@@ -241,6 +255,8 @@ function randomNum() {
 
 
 function newQuestion() {
+
+  if (gameOver) return;
 
   num1 = randomNum();
   num2 = randomNum();
@@ -264,6 +280,7 @@ function newQuestion() {
 function moveForward() {
 
   if (position < TOTAL_BLOCKS) {
+
     position++;
     buildPath();
     playSound(jumpSound);
@@ -274,6 +291,7 @@ function moveForward() {
 function moveBackward() {
 
   if (position > 0) {
+
     position--;
     buildPath();
     playSound(wrongSound);
@@ -286,6 +304,8 @@ function moveBackward() {
    =============================== */
 
 function checkAnswer() {
+
+  if (gameOver) return;
 
   const userAnswer = Number(input.value);
 
@@ -317,23 +337,18 @@ function checkAnswer() {
 
   if (position === TOTAL_BLOCKS) {
 
-    // Hide everything except the mouse
-    questionDiv.style.display = "none";
-    input.style.display = "none";
-    checkBtn.style.display = "none";
-    statusDiv.style.display = "none";
+    gameOver = true;
 
-    // Show only the mouse in the path
-    pathDiv.innerHTML = "";
-    const mouseBlock = document.createElement("div");
-    mouseBlock.className = "block mouse";
-    mouseBlock.textContent = "🐭";
-    mouseBlock.style.fontSize = "48px";
-    mouseBlock.style.height = "80px";
-    pathDiv.appendChild(mouseBlock);
+    buildPath();
 
-    // Play win sound
     playSound(winSound);
+
+    questionDiv.textContent = "🎉 YOU WIN! 🎉";
+
+    statusDiv.textContent = "Mouse got the cheese! 🧀";
+
+    input.disabled = true;
+    checkBtn.disabled = true;
 
     return;
   }
