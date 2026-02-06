@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Mouse & Cheese Reading Game</title>
+
+<style>
+
+  body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    background: linear-gradient(#fffde7, #e3f2fd);
+
+    font-family:
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      "Apple Color Emoji",
+      "Segoe UI Emoji",
+      Arial,
+      sans-serif;
+
+    text-align: center;
+  }
+
+  #game {
+    width: 100%;
+    max-width: 500px;
+    padding: 20px;
+  }
+
+  h1 {
+    font-size: 28px;
+    margin-bottom: 10px;
+  }
+
+  #path {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 6px;
+    margin: 20px 0;
+  }
+
+  .block {
+    height: 45px;
+    border-radius: 8px;
+    background: #e0e0e0;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    font-size: 22px;
+  }
+
+  .mouse {
+    background: #81c784;
+  }
+
+  .cheese {
+    background: #ffd54f;
+  }
+
+  #word {
+    font-size: 42px;
+    font-weight: bold;
+    margin: 15px 0;
+  }
+
+  button {
+    font-size: 20px;
+    padding: 12px 26px;
+    border-radius: 12px;
+    border: none;
+
+    background: #4caf50;
+    color: white;
+
+    cursor: pointer;
+  }
+
+  button:active {
+    transform: scale(0.96);
+  }
+
+  #status {
+    font-size: 20px;
+    margin-top: 12px;
+    min-height: 24px;
+  }
+
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+  <h1>🐭 Help Mouse Reach the Cheese! 🧀</h1>
+
+  <div id="path"></div>
+
+  <div id="word"></div>
+
+  <button id="listenBtn">🎤 Read</button>
+
+  <div id="status"></div>
+
+</div>
+
+<!-- Sounds -->
+<audio id="jumpSound" src="jump.mp3" preload="auto"></audio>
+<audio id="wrongSound" src="wrong.mp3" preload="auto"></audio>
+
+
+<script>
+
+/* ===============================
+   WORDS
+   =============================== */
+
+const words = [
+  "cat","dog","sun","ball","tree",
+  "milk","fish","book","run","red",
+  "blue","apple","car","star","frog"
+];
+
+
+/* ===============================
+   GAME SETTINGS
+   =============================== */
+
+const TOTAL_BLOCKS = 10;
+
+let position = 0;
+let currentWord = "";
+
+
+/* ===============================
+   ELEMENTS
+   =============================== */
+
+const pathDiv = document.getElementById("path");
+const wordDiv = document.getElementById("word");
+const statusDiv = document.getElementById("status");
+const listenBtn = document.getElementById("listenBtn");
+
+const jumpSound = document.getElementById("jumpSound");
+const wrongSound = document.getElementById("wrongSound");
+
+listenBtn.addEventListener("click", startListening);
+
+
+/* ===============================
+   SOUND HELPER
+   =============================== */
+
+function playSound(sound) {
+  sound.pause();
+  sound.currentTime = 0;
+
+  // Sync with next frame
+  requestAnimationFrame(() => {
+    sound.play();
+  });
+}
+
+
+/* ===============================
+   BUILD PATH
+   =============================== */
+
+function buildPath() {
+
+  pathDiv.innerHTML = "";
+
+  for (let i = 0; i <= TOTAL_BLOCKS; i++) {
+
+    const block = document.createElement("div");
+    block.className = "block";
+
+    if (i === position) {
+      block.classList.add("mouse");
+      block.textContent = "🐭";
+    }
+
+    if (i === TOTAL_BLOCKS) {
+      block.classList.add("cheese");
+      block.textContent = "🧀";
+    }
+
+    pathDiv.appendChild(block);
+  }
+}
+
+
+/* ===============================
+   WORD HANDLING
+   =============================== */
+
+function pickWord() {
+
+  const i = Math.floor(Math.random() * words.length);
+
+  currentWord = words[i];
+
+  wordDiv.textContent = currentWord;
+}
+
+
+function nextTurn() {
+
+  pickWord();
+  buildPath();
+
+  statusDiv.textContent = "";
+  listenBtn.disabled = false;
+}
+
+
+/* ===============================
+   MOVE MOUSE (SYNCED)
+   =============================== */
+
+function moveForward() {
+
+  if (position < TOTAL_BLOCKS) {
+
+    // Move first
+    position++;
+    buildPath();
+
+    // Then play sound (synced)
+    playSound(jumpSound);
+  }
+}
+
+
+function moveBackward() {
+
+  if (position > 0) {
+
+    position--;
+    buildPath();
+
+    playSound(wrongSound);
+  }
+}
+
+
+/* ===============================
+   SPEECH
+   =============================== */
+
+const SpeechRecognition =
+  window.SpeechRecognition || window.webkitSpeechRecognition;
+
+const recognition = SpeechRecognition
+  ? new SpeechRecognition()
+  : null;
+
+if (recognition) recognition.lang = "en-US";
+
+
+function startListening() {
+
+  if (!recognition) {
+    alert("Use Chrome or Edge");
+    return;
+  }
+
+  statusDiv.textContent = "🎧 Listening...";
+  listenBtn.disabled = true;
+
+  recognition.start();
+}
+
+
+if (recognition) {
+
+  recognition.onresult = function(e) {
+
+    const spoken = e.results[0][0].transcript
+      .toLowerCase()
+      .trim();
+
+    const expected = currentWord.toLowerCase();
+
+
+    if (spoken === expected) {
+
+      moveForward();
+
+      statusDiv.textContent = "✅ Correct! Hop forward!";
+
+    } else {
+
+      moveBackward();
+
+      statusDiv.textContent =
+        "❌ Try again (You said: " + spoken + ")";
+    }
+
+
+    if (position === TOTAL_BLOCKS) {
+
+      buildPath();
+
+      wordDiv.textContent = "🎉 YOU WIN! 🎉";
+
+      statusDiv.textContent = "Mouse got the cheese! 🧀";
+
+      listenBtn.disabled = true;
+
+      return;
+    }
+
+
+    setTimeout(nextTurn, 1200);
+  };
+
+
+  recognition.onerror = function() {
+
+    statusDiv.textContent = "⚠️ Try again";
+    listenBtn.disabled = false;
+  };
+}
+
+
+/* ===============================
+   START GAME
+   =============================== */
+
+nextTurn();
+
+</script>
+
+</body>
+</html>
+
