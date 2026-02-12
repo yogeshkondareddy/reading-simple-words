@@ -736,6 +736,11 @@
 
   function unlockReward() {
     unlocked = true;
+    // Stop the mic after completing the sentence
+    if (rec && listening) {
+      manualStop = true;
+      try { rec.stop(); } catch (_) {}
+    }
     setStatus("ok", `🎉 Sentence complete! Great job!`);
     updateWordClasses();
     showReward();
