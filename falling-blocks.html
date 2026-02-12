@@ -3,22 +3,26 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Word Stack (Read to Stack!)</title>
+  <title>Read the Sentence — Word by Word</title>
   <style>
     :root { color-scheme: light; }
     html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
-    body { background: #0b1220; color: #e9eefc; display: grid; place-items: center; padding: 14px; }
+    body {
+      background: radial-gradient(1200px 700px at 50% 0%, rgba(120,180,255,0.18), rgba(0,0,0,0)) , #0b1220;
+      color: #e9eefc;
+      display: grid;
+      place-items: center;
+      padding: 14px;
+    }
 
     .app {
-      width: min(960px, 100%);
+      width: min(980px, 100%);
       display: grid;
       gap: 14px;
-      grid-template-columns: 1.1fr 0.9fr;
+      grid-template-columns: 1.25fr 0.75fr;
+      align-items: start;
     }
-
-    @media (max-width: 860px) {
-      .app { grid-template-columns: 1fr; }
-    }
+    @media (max-width: 900px) { .app { grid-template-columns: 1fr; } }
 
     .card {
       background: rgba(255,255,255,0.06);
@@ -38,15 +42,12 @@
       background: rgba(255,255,255,0.04);
     }
 
-    .title {
-      display: grid;
-      gap: 2px;
-    }
+    .title { display: grid; gap: 2px; }
     .title h1 { font-size: 18px; margin: 0; letter-spacing: 0.2px; }
     .title p { font-size: 12px; margin: 0; opacity: 0.8; }
 
     .btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
-    button {
+    button, select {
       appearance: none;
       border: 1px solid rgba(255,255,255,0.18);
       background: rgba(255,255,255,0.10);
@@ -54,61 +55,65 @@
       padding: 10px 12px;
       border-radius: 12px;
       cursor: pointer;
-      font-weight: 650;
+      font-weight: 700;
       letter-spacing: 0.2px;
       font-size: 13px;
     }
     button:hover { background: rgba(255,255,255,0.16); }
-    button:disabled {
-      opacity: 0.55; cursor: not-allowed;
-    }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+    select { cursor: pointer; }
 
-    .main {
-      padding: 14px;
-      display: grid;
-      gap: 14px;
-    }
+    .main { padding: 14px; display: grid; gap: 14px; }
 
-    .playRow {
-      display: grid;
-      gap: 12px;
-      grid-template-columns: 1fr;
-    }
-
-    .wordBox {
+    .sentenceBox {
       border-radius: 16px;
       background: rgba(0,0,0,0.22);
       border: 1px solid rgba(255,255,255,0.10);
       padding: 14px;
       display: grid;
-      gap: 10px;
+      gap: 12px;
     }
 
-    .wordLabel { font-size: 12px; opacity: 0.8; }
+    .label { font-size: 12px; opacity: 0.82; }
+
+    .words {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      padding: 6px 0 2px;
+    }
 
     .word {
-      font-size: clamp(42px, 7vw, 64px);
-      font-weight: 900;
-      line-height: 1;
-      letter-spacing: 0.5px;
+      min-width: 56px;
+      padding: 12px 14px;
+      border-radius: 14px;
       text-align: center;
-      padding: 14px 10px;
-      border-radius: 16px;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.10);
+      font-size: clamp(18px, 4.7vw, 26px);
+      font-weight: 900;
+      letter-spacing: 0.4px;
       user-select: none;
-    }
-
-    .hint {
-      display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
-      opacity: 0.9;
-      font-size: 13px;
-    }
-    .pill {
-      padding: 7px 10px;
-      border-radius: 999px;
       border: 1px solid rgba(255,255,255,0.14);
       background: rgba(255,255,255,0.08);
+      transition: transform 220ms ease, background 220ms ease, border-color 220ms ease;
+      text-transform: lowercase;
+    }
+
+    .word.pending { opacity: 0.92; }
+    .word.current {
+      background: rgba(120,180,255,0.22);
+      border-color: rgba(120,180,255,0.35);
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 10px 16px rgba(0,0,0,0.18);
+    }
+    .word.correct {
+      background: rgba(60,255,160,0.14);
+      border-color: rgba(60,255,160,0.38);
+    }
+    .word.wrongFlash {
+      background: rgba(255,80,120,0.18);
+      border-color: rgba(255,80,120,0.42);
+      transform: translateY(0) scale(1.02);
     }
 
     .status {
@@ -128,65 +133,8 @@
     .status.bad { border-color: rgba(255,80,120,0.35); background: rgba(255,80,120,0.10); }
     .status.neutral { opacity: 0.95; }
 
-    .small {
-      font-size: 12px;
-      opacity: 0.82;
-      text-align: center;
-    }
-
-    /* Stack area */
-    .stackWrap {
-      height: 520px;
-      display: grid;
-      grid-template-rows: 1fr auto;
-      padding: 14px;
-      gap: 12px;
-    }
-
-    .stackArea {
-      border-radius: 16px;
-      background: radial-gradient(1200px 400px at 50% 100%, rgba(120,180,255,0.14), rgba(0,0,0,0.0)),
-                  rgba(0,0,0,0.18);
-      border: 1px solid rgba(255,255,255,0.12);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .ground {
-      position: absolute;
-      left: 0; right: 0;
-      bottom: 0;
-      height: 56px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
-      border-top: 1px solid rgba(255,255,255,0.10);
-      display: grid;
-      place-items: center;
-      font-size: 12px;
-      opacity: 0.85;
-    }
-
-    .block {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      width: min(320px, 72%);
-      height: 58px;
-      border-radius: 14px;
-      background: rgba(255,255,255,0.10);
-      border: 1px solid rgba(255,255,255,0.16);
-      box-shadow: 0 10px 18px rgba(0,0,0,0.25);
-      display: grid;
-      place-items: center;
-      font-weight: 900;
-      letter-spacing: 0.4px;
-      text-transform: lowercase;
-      user-select: none;
-      transition: bottom 320ms cubic-bezier(.2,.9,.2,1), transform 320ms cubic-bezier(.2,.9,.2,1);
-    }
-
-    .block.pop {
-      transform: translateX(-50%) scale(1.04);
-    }
+    .small { font-size: 12px; opacity: 0.82; text-align: center; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
 
     .stats {
       display: grid;
@@ -202,12 +150,6 @@
     }
     .stat .k { font-size: 11px; opacity: 0.8; }
     .stat .v { font-size: 18px; font-weight: 900; margin-top: 2px; }
-    .footerNote {
-      font-size: 11px;
-      opacity: 0.78;
-      text-align: center;
-      padding: 0 14px 14px;
-    }
 
     .warn {
       padding: 12px;
@@ -217,9 +159,82 @@
       font-size: 13px;
       line-height: 1.35;
       margin: 12px 14px 14px;
+      display: none;
     }
 
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    /* Reward panel */
+    .rewardWrap { height: 560px; padding: 14px; display: grid; gap: 14px; grid-template-rows: auto 1fr auto; }
+    .rewardStage {
+      border-radius: 16px;
+      background:
+        radial-gradient(700px 400px at 50% 20%, rgba(255,255,255,0.12), rgba(0,0,0,0)),
+        rgba(0,0,0,0.20);
+      border: 1px solid rgba(255,255,255,0.12);
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+    }
+
+    .rewardEmoji {
+      font-size: 96px;
+      filter: drop-shadow(0 18px 24px rgba(0,0,0,0.35));
+      opacity: 0;
+      transform: translateY(14px) scale(0.9);
+      transition: opacity 220ms ease, transform 220ms cubic-bezier(.2,.9,.2,1);
+      user-select: none;
+      text-align: center;
+      line-height: 1.1;
+      padding: 10px;
+    }
+    .rewardEmoji.show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      animation: bounce 900ms ease-out 1;
+    }
+    @keyframes bounce {
+      0% { transform: translateY(18px) scale(0.92); }
+      45% { transform: translateY(-10px) scale(1.02); }
+      75% { transform: translateY(6px) scale(0.98); }
+      100% { transform: translateY(0) scale(1); }
+    }
+
+    .rewardCaption {
+      font-size: 14px;
+      opacity: 0.9;
+      text-align: center;
+      padding: 0 10px 10px;
+    }
+
+    .confetti {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      opacity: 0;
+      transition: opacity 180ms ease;
+    }
+    .confetti.on { opacity: 1; }
+    .confetto {
+      position: absolute;
+      top: -12px;
+      width: 10px;
+      height: 16px;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.8);
+      opacity: 0.95;
+      animation: fall 1100ms linear forwards;
+      transform: rotate(12deg);
+    }
+    @keyframes fall {
+      to { top: 110%; transform: rotate(260deg); opacity: 0.95; }
+    }
+
+    .footerNote { font-size: 11px; opacity: 0.78; text-align: center; padding: 0 14px 14px; }
+
+    .row {
+      display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: center;
+    }
   </style>
 </head>
 <body>
@@ -227,117 +242,135 @@
     <div class="card">
       <div class="header">
         <div class="title">
-          <h1>Word Stack</h1>
-          <p>Read the word correctly → it becomes a block and stacks up.</p>
+          <h1>Read the Sentence</h1>
+          <p>Read each word in order. Words turn green when correct. Finish the sentence to unlock an animated reward.</p>
         </div>
         <div class="btns">
-          <button id="btnStart">🎙️ Start Listening</button>
+          <button id="btnStart">🎙️ Start</button>
           <button id="btnStop" disabled>⏹ Stop</button>
-          <button id="btnSkip">⏭️ Skip Word</button>
+          <button id="btnHint">🔊 Say Word</button>
+          <button id="btnRestartWord">↩️ Retry Word</button>
+          <button id="btnNext">➡️ Next</button>
           <button id="btnReset">🔄 Reset</button>
         </div>
       </div>
 
       <div class="main">
-        <div class="wordBox">
-          <div class="wordLabel">Say this word:</div>
-          <div class="word" id="targetWord">—</div>
-
-          <div class="hint">
-            <span class="pill">Tip: speak clearly and pause</span>
-            <span class="pill">We match exact word (simple cleanup)</span>
-            <span class="pill">Chrome/Edge recommended</span>
+        <div class="sentenceBox">
+          <div class="row">
+            <div class="label">Choose sentence:</div>
+            <select id="sentencePicker" aria-label="Sentence picker"></select>
           </div>
 
-          <div class="status neutral" id="status">Press <b>Start Listening</b>, then read the word out loud.</div>
-          <div class="small">Heard: <span class="mono" id="heardText">—</span></div>
+          <div class="label">Read this sentence (word-by-word):</div>
+          <div class="words" id="words"></div>
+
+          <div class="status neutral" id="status">
+            Press <b>Start</b>, then read the <b>blue</b> word.
+          </div>
+          <div class="small">Heard: <span class="mono" id="heard">—</span></div>
         </div>
 
         <div class="stats">
-          <div class="stat">
-            <div class="k">Blocks stacked</div>
-            <div class="v" id="stacksCount">0</div>
-          </div>
-          <div class="stat">
-            <div class="k">Correct</div>
-            <div class="v" id="correctCount">0</div>
-          </div>
-          <div class="stat">
-            <div class="k">Attempts</div>
-            <div class="v" id="attemptCount">0</div>
-          </div>
+          <div class="stat"><div class="k">Word</div><div class="v" id="wordIndex">1</div></div>
+          <div class="stat"><div class="k">Correct words</div><div class="v" id="correctWords">0</div></div>
+          <div class="stat"><div class="k">Attempts</div><div class="v" id="attempts">0</div></div>
         </div>
       </div>
 
-      <div class="warn" id="supportWarn" style="display:none;">
+      <div class="warn" id="supportWarn">
         Your browser doesn’t support <b>Web Speech Recognition</b>.
         Try <b>Chrome</b> on desktop or Android. On iOS, speech recognition support can be limited.
       </div>
 
       <div class="footerNote">
-        Privacy note: Speech recognition runs via the browser’s speech service. Don’t use for sensitive data.
+        Privacy note: Speech recognition may use the browser’s speech service. Don’t use for sensitive info.
       </div>
     </div>
 
     <div class="card">
       <div class="header">
         <div class="title">
-          <h1>Stack</h1>
-          <p>Each correct word becomes a new block.</p>
+          <h1>Reward</h1>
+          <p>Finish the whole sentence to see a fun animated scene.</p>
         </div>
         <div class="btns">
-          <button id="btnHarder">⬆️ Harder</button>
-          <button id="btnEasier">⬇️ Easier</button>
+          <button id="btnReplayReward">🎉 Replay</button>
+          <button id="btnMute">🔈 Sound On</button>
         </div>
       </div>
 
-      <div class="stackWrap">
-        <div class="stackArea" id="stackArea">
-          <div class="ground">Ground</div>
+      <div class="rewardWrap">
+        <div class="rewardStage" id="rewardStage">
+          <div class="confetti" id="confetti"></div>
+          <div>
+            <div class="rewardEmoji" id="rewardEmoji">🙂</div>
+            <div class="rewardCaption" id="rewardCaption">Read the sentence to unlock!</div>
+          </div>
         </div>
-        <div class="small">If you reach the top, you win 🎉</div>
+        <div class="small">Tip: If recognition is picky, speak slowly and clearly.</div>
+        <div class="small">Best in Chrome/Edge.</div>
       </div>
     </div>
   </div>
 
 <script>
 (() => {
-  // ---------- Word lists by difficulty ----------
-  const LISTS = {
-    easy: ["cat","dog","sun","hat","map","cup","pen","bed","red","run","top","box","fish","tree","moon","star"],
-    medium: ["plane","chair","smile","house","green","train","water","paper","cookie","rabbit","window","purple","banana","flower"],
-    hard: ["because","together","different","favorite","remember","beautiful","adventure","surprise","imagine","important","yesterday","tomorrow"]
-  };
+  // ------------------ Dictionary (1–4 letter words only) ------------------
+  // Note: "the" is 3 letters, allowed. Sentences are simple & kid-friendly.
+  const DICT = [
+    { id: "s1", text: "I see a cat", reward: { emoji: "👀🐱✨", caption: "A cat pops in with sparkles!" } },
+    { id: "s2", text: "The sun is up", reward: { emoji: "☀️🌤✨", caption: "The sun rises — yay!" } },
+    { id: "s3", text: "We can run", reward: { emoji: "🏃‍♂️🏃‍♀️💨", caption: "Run run run!" } },
+    { id: "s4", text: "The dog is sad", reward: { emoji: "🐶😢", caption: "Oh no — a sad pup." } },
+    { id: "s5", text: "I see the red bus", reward: { emoji: "🚌🔴✨", caption: "A red bus zooms by!" } },
+    { id: "s6", text: "The hen has an egg", reward: { emoji: "🐔🥚✨", caption: "A hen shows an egg!" } },
+    { id: "s7", text: "A bug is on me", reward: { emoji: "🐞😄", caption: "A tiny bug says hi!" } },
+    { id: "s8", text: "We see a big fox", reward: { emoji: "👀🦊✨", caption: "A big fox appears!" } }
+  ];
 
-  let difficulty = "easy";
-  let words = [...LISTS[difficulty]];
-  let target = pickWord();
-  let stacked = [];
-  let correct = 0;
-  let attempts = 0;
-
-  const elTarget = document.getElementById("targetWord");
+  // ------------------ Elements ------------------
+  const elWords = document.getElementById("words");
   const elStatus = document.getElementById("status");
-  const elHeard = document.getElementById("heardText");
-  const elStacks = document.getElementById("stacksCount");
-  const elCorrect = document.getElementById("correctCount");
-  const elAttempts = document.getElementById("attemptCount");
-  const stackArea = document.getElementById("stackArea");
+  const elHeard = document.getElementById("heard");
+  const elWordIndex = document.getElementById("wordIndex");
+  const elCorrectWords = document.getElementById("correctWords");
+  const elAttempts = document.getElementById("attempts");
+  const elWarn = document.getElementById("supportWarn");
+
+  const picker = document.getElementById("sentencePicker");
 
   const btnStart = document.getElementById("btnStart");
   const btnStop = document.getElementById("btnStop");
-  const btnSkip = document.getElementById("btnSkip");
+  const btnHint = document.getElementById("btnHint");
+  const btnRestartWord = document.getElementById("btnRestartWord");
+  const btnNext = document.getElementById("btnNext");
   const btnReset = document.getElementById("btnReset");
-  const btnHarder = document.getElementById("btnHarder");
-  const btnEasier = document.getElementById("btnEasier");
+  const btnReplayReward = document.getElementById("btnReplayReward");
+  const btnMute = document.getElementById("btnMute");
 
-  const supportWarn = document.getElementById("supportWarn");
+  const rewardEmoji = document.getElementById("rewardEmoji");
+  const rewardCaption = document.getElementById("rewardCaption");
+  const confetti = document.getElementById("confetti");
 
-  // ---------- Speech Recognition ----------
+  // ------------------ Speech Recognition ------------------
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   let rec = null;
   let listening = false;
+  let manualStop = false;
 
+  // ------------------ State ------------------
+  let currentIdx = 0;
+  let attempts = 0;
+  let correctCount = 0;
+  let unlocked = false;
+
+  let soundOn = true;
+
+  let currentSentence = DICT[0];
+  let words = tokenize(currentSentence.text);
+
+  // ------------------ Helpers ------------------
   function setStatus(type, html) {
     elStatus.className = `status ${type}`;
     elStatus.innerHTML = html;
@@ -347,75 +380,63 @@
     return (s || "")
       .toLowerCase()
       .trim()
-      // keep letters and spaces only
       .replace(/[^a-z\s']/g, " ")
       .replace(/\s+/g, " ")
       .trim();
   }
 
-  function updateUI() {
-    elTarget.textContent = target;
-    elStacks.textContent = String(stacked.length);
-    elCorrect.textContent = String(correct);
-    elAttempts.textContent = String(attempts);
+  function tokenize(sentence) {
+    return normalize(sentence).split(" ").filter(Boolean);
   }
 
-  function pickWord() {
-    if (words.length === 0) words = [...LISTS[difficulty]];
-    const i = Math.floor(Math.random() * words.length);
-    const w = words[i];
-    words.splice(i, 1);
-    return w;
+  function renderPicker() {
+    picker.innerHTML = "";
+    DICT.forEach((s, idx) => {
+      const opt = document.createElement("option");
+      opt.value = s.id;
+      opt.textContent = `${idx + 1}. ${s.text}`;
+      picker.appendChild(opt);
+    });
+    picker.value = currentSentence.id;
   }
 
-  function resetGame() {
-    stacked = [];
-    correct = 0;
-    attempts = 0;
-    clearBlocks();
-    target = pickWord();
-    elHeard.textContent = "—";
-    setStatus("neutral", `Press <b>Start Listening</b>, then read the word out loud.`);
-    updateUI();
+  function renderWords() {
+    elWords.innerHTML = "";
+    words.forEach((w, i) => {
+      const span = document.createElement("div");
+      span.className = "word pending";
+      span.textContent = w;
+      span.dataset.idx = String(i);
+      elWords.appendChild(span);
+    });
+    updateWordClasses();
   }
 
-  function clearBlocks() {
-    [...stackArea.querySelectorAll(".block")].forEach(n => n.remove());
-  }
+  function updateWordClasses(flashWrong=false) {
+    [...elWords.children].forEach((node, i) => {
+      node.classList.remove("current", "correct", "wrongFlash");
+      if (i < currentIdx) node.classList.add("correct");
+      else node.classList.add("pending");
 
-  function stackBlock(word) {
-    const block = document.createElement("div");
-    block.className = "block";
-    block.textContent = word;
+      if (i === currentIdx && !unlocked) node.classList.add("current");
+    });
 
-    stackArea.appendChild(block);
-    stacked.push(word);
-
-    // Geometry
-    const groundH = 56;
-    const blockH = 58;
-    const gap = 8;
-    const idx = stacked.length - 1;
-
-    // bottom position: ground + idx*(blockH+gap)
-    const bottomPx = groundH + idx * (blockH + gap);
-    block.style.bottom = bottomPx + "px";
-
-    // little pop animation
-    block.classList.add("pop");
-    setTimeout(() => block.classList.remove("pop"), 240);
-
-    // win condition: block hits near top
-    const areaHeight = stackArea.clientHeight;
-    const topY = areaHeight - bottomPx - blockH;
-    if (topY < 20) {
-      setStatus("ok", `🏆 You reached the top! Awesome reading! Press <b>Reset</b> to play again.`);
+    if (flashWrong) {
+      const node = elWords.children[currentIdx];
+      if (node) {
+        node.classList.add("wrongFlash");
+        setTimeout(() => node.classList.remove("wrongFlash"), 260);
+      }
     }
+
+    elWordIndex.textContent = String(Math.min(currentIdx + 1, words.length));
+    elCorrectWords.textContent = String(correctCount);
+    elAttempts.textContent = String(attempts);
   }
 
   function ensureRecognition() {
     if (!SpeechRecognition) {
-      supportWarn.style.display = "block";
+      elWarn.style.display = "block";
       btnStart.disabled = true;
       btnStop.disabled = true;
       return false;
@@ -424,74 +445,86 @@
       rec = new SpeechRecognition();
       rec.lang = "en-US";
       rec.interimResults = false;
-      rec.continuous = true; // keep listening
+      rec.continuous = true;
       rec.maxAlternatives = 3;
 
       rec.onstart = () => {
         listening = true;
         btnStart.disabled = true;
         btnStop.disabled = false;
-        setStatus("neutral", `🎙️ Listening... Read: <b>${target}</b>`);
+        if (!unlocked) {
+          setStatus("neutral", `🎙️ Listening... Say: <b>${words[currentIdx]}</b>`);
+        }
       };
 
       rec.onend = () => {
         listening = false;
         btnStart.disabled = false;
         btnStop.disabled = true;
-        // If we didn't intentionally stop, restart for stability.
         if (!manualStop) {
           try { rec.start(); } catch (_) {}
         }
       };
 
       rec.onerror = (e) => {
-        // Common: "not-allowed", "no-speech", "aborted", "network"
-        setStatus("bad", `⚠️ Speech error: <b>${e.error}</b>. Try again (quiet room helps).`);
+        setStatus("bad", `⚠️ Speech error: <b>${e.error}</b>. If blocked, allow microphone permission.`);
       };
 
       rec.onresult = (evt) => {
-        // get the most recent result
         const res = evt.results[evt.results.length - 1];
         const best = res && res[0] ? res[0].transcript : "";
         const norm = normalize(best);
         elHeard.textContent = norm || "—";
 
-        // count attempt if we heard something meaningful
-        if (norm) attempts++;
+        if (!norm || unlocked) return;
 
-        const normTarget = normalize(target);
+        attempts++;
 
-        // simple matching strategy:
-        // - if exact match OR transcript contains the target as a whole word
-        const wholeWord = new RegExp(`\\b${escapeRegExp(normTarget)}\\b`, "i");
-        const ok = norm === normTarget || wholeWord.test(norm);
+        const target = words[currentIdx];
+        const ok = wordMatches(norm, target);
 
         if (ok) {
-          correct++;
+          correctCount++;
+          playGoodWord();
           setStatus("ok", `✅ Correct! You said: <b>${escapeHtml(best)}</b>`);
-          stackBlock(target);
-          target = pickWord();
-          setTimeout(() => {
-            if (stacked.length === 0) return;
-            // Don't overwrite win message
-            if (!elStatus.innerHTML.includes("🏆")) {
-              setStatus("neutral", `Next word: <b>${target}</b>`);
-            }
-            updateUI();
-          }, 250);
+          currentIdx++;
+          if (currentIdx >= words.length) {
+            unlockReward();
+          } else {
+            setTimeout(() => {
+              setStatus("neutral", `Next word: <b>${words[currentIdx]}</b>`);
+            }, 220);
+          }
+          updateWordClasses();
         } else {
-          setStatus("bad", `❌ Not quite. Try again. You said: <b>${escapeHtml(best)}</b>`);
-          updateUI();
+          playBadWord();
+          setStatus("bad", `❌ Try again. You said: <b>${escapeHtml(best)}</b>`);
+          updateWordClasses(true);
         }
       };
     }
     return true;
   }
 
-  function escapeRegExp(s) {
-    return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // Match strategy for early readers:
+  // - exact match OR transcript ends with the word OR contains it as a whole word
+  function wordMatches(transcriptNorm, targetWord) {
+    const t = normalize(targetWord);
+    const s = transcriptNorm;
+
+    if (s === t) return true;
+
+    // whole word match anywhere
+    const whole = new RegExp(`\\b${escapeRegExp(t)}\\b`, "i");
+    if (whole.test(s)) return true;
+
+    // sometimes recognition returns "the the" etc; accept if it ends with target
+    if (s.endsWith(" " + t) || s.endsWith(t)) return true;
+
+    return false;
   }
 
+  function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
   function escapeHtml(s) {
     return String(s)
       .replaceAll("&", "&amp;")
@@ -501,18 +534,163 @@
       .replaceAll("'", "&#039;");
   }
 
-  let manualStop = false;
+  // ------------------ Sounds (no external files) ------------------
+  // Uses WebAudio oscillator to make fun tones.
+  let audioCtx = null;
 
-  btnStart.addEventListener("click", async () => {
+  function ensureAudio() {
+    if (!soundOn) return null;
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    // iOS requires resume after gesture
+    if (audioCtx.state === "suspended") audioCtx.resume().catch(()=>{});
+    return audioCtx;
+  }
+
+  function beep({ freq=440, dur=0.12, type="sine", gain=0.06, when=0 }) {
+    const ctx = ensureAudio();
+    if (!ctx) return;
+
+    const t0 = ctx.currentTime + when;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(gain, t0 + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+
+    osc.connect(g);
+    g.connect(ctx.destination);
+
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.02);
+  }
+
+  function playGoodWord() {
+    // cheerful two-tone
+    beep({ freq: 660, dur: 0.10, type: "triangle", gain: 0.06 });
+    beep({ freq: 880, dur: 0.12, type: "triangle", gain: 0.06, when: 0.10 });
+  }
+
+  function playBadWord() {
+    // low "boop"
+    beep({ freq: 220, dur: 0.16, type: "sawtooth", gain: 0.045 });
+  }
+
+  function playSentenceWin() {
+    // little fanfare
+    const notes = [523, 659, 784, 1046];
+    notes.forEach((f, i) => beep({ freq: f, dur: 0.12, type: "square", gain: 0.045, when: i * 0.12 }));
+    beep({ freq: 1318, dur: 0.18, type: "triangle", gain: 0.05, when: 0.50 });
+  }
+
+  function speakWord(word) {
+    // Optional: text-to-speech hint
+    try {
+      const u = new SpeechSynthesisUtterance(word);
+      u.lang = "en-US";
+      u.rate = 0.9;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
+    } catch (_) {}
+  }
+
+  // ------------------ Reward animation ------------------
+  function clearConfetti() {
+    confetti.innerHTML = "";
+    confetti.classList.remove("on");
+  }
+
+  function popConfetti() {
+    clearConfetti();
+    confetti.classList.add("on");
+    const count = 24;
+    for (let i = 0; i < count; i++) {
+      const d = document.createElement("div");
+      d.className = "confetto";
+      d.style.left = (Math.random() * 100) + "%";
+      d.style.animationDuration = (900 + Math.random() * 600) + "ms";
+      d.style.transform = `rotate(${Math.random()*90}deg)`;
+      d.style.opacity = String(0.75 + Math.random()*0.25);
+      // random pale-ish colors via rgba (avoid specifying global palette; per-piece is ok)
+      const r = Math.floor(120 + Math.random()*135);
+      const g = Math.floor(120 + Math.random()*135);
+      const b = Math.floor(120 + Math.random()*135);
+      d.style.background = `rgba(${r},${g},${b},0.95)`;
+      confetti.appendChild(d);
+    }
+    setTimeout(() => confetti.classList.remove("on"), 1400);
+  }
+
+  function showReward() {
+    rewardEmoji.textContent = currentSentence.reward.emoji;
+    rewardCaption.textContent = currentSentence.reward.caption;
+    rewardEmoji.classList.remove("show");
+    // force reflow to restart animation
+    void rewardEmoji.offsetWidth;
+    rewardEmoji.classList.add("show");
+    popConfetti();
+  }
+
+  function unlockReward() {
+    unlocked = true;
+    setStatus("ok", `🎉 Sentence complete! Great job!`);
+    updateWordClasses();
+    showReward();
+    playSentenceWin();
+  }
+
+  function replayReward() {
+    if (!unlocked) return;
+    showReward();
+    playSentenceWin();
+  }
+
+  // ------------------ Flow controls ------------------
+  function loadSentenceById(id) {
+    const s = DICT.find(x => x.id === id) || DICT[0];
+    currentSentence = s;
+    words = tokenize(currentSentence.text);
+    resetProgress(false);
+    renderWords();
+    clearConfetti();
+    rewardEmoji.textContent = "🙂";
+    rewardEmoji.classList.remove("show");
+    rewardCaption.textContent = "Read the sentence to unlock!";
+    setStatus("neutral", `Press <b>Start</b>, then read the <b>blue</b> word.`);
+  }
+
+  function resetProgress(resetAttempts=true) {
+    currentIdx = 0;
+    correctCount = 0;
+    if (resetAttempts) attempts = 0;
+    unlocked = false;
+    elHeard.textContent = "—";
+    updateWordClasses();
+  }
+
+  function nextSentence() {
+    const idx = DICT.findIndex(x => x.id === currentSentence.id);
+    const next = DICT[(idx + 1) % DICT.length];
+    picker.value = next.id;
+    loadSentenceById(next.id);
+  }
+
+  // ------------------ Wire up UI ------------------
+  renderPicker();
+  renderWords();
+  ensureRecognition();
+
+  picker.addEventListener("change", () => loadSentenceById(picker.value));
+
+  btnStart.addEventListener("click", () => {
     if (!ensureRecognition()) return;
     manualStop = false;
-
-    // iOS sometimes requires user gesture (this click is good) + https in hosted pages
-    try {
-      rec.start();
-    } catch (e) {
-      // start() can throw if already started
-      setStatus("bad", `⚠️ Couldn't start listening. If it says "not-allowed", allow microphone permissions.`);
+    ensureAudio(); // prime audio on gesture
+    try { rec.start(); } catch (_) {
+      setStatus("bad", `⚠️ Couldn't start listening. If blocked, allow microphone permission.`);
     }
   });
 
@@ -520,37 +698,45 @@
     if (!rec) return;
     manualStop = true;
     try { rec.stop(); } catch (_) {}
-    setStatus("neutral", `Stopped. Press <b>Start Listening</b> to continue.`);
+    setStatus("neutral", `Stopped. Press <b>Start</b> to continue.`);
   });
 
-  btnSkip.addEventListener("click", () => {
-    target = pickWord();
+  btnHint.addEventListener("click", () => {
+    ensureAudio();
+    if (unlocked) return;
+    const w = words[currentIdx];
+    speakWord(w);
+  });
+
+  btnRestartWord.addEventListener("click", () => {
+    if (unlocked) return;
     elHeard.textContent = "—";
-    setStatus("neutral", `Skipped. New word: <b>${target}</b>`);
-    updateUI();
+    setStatus("neutral", `Try again. Say: <b>${words[currentIdx]}</b>`);
+    updateWordClasses(true);
   });
 
-  btnReset.addEventListener("click", () => resetGame());
+  btnNext.addEventListener("click", () => nextSentence());
 
-  btnHarder.addEventListener("click", () => {
-    difficulty = (difficulty === "easy") ? "medium" : (difficulty === "medium") ? "hard" : "hard";
-    words = [...LISTS[difficulty]];
-    target = pickWord();
-    setStatus("neutral", `Difficulty: <b>${difficulty}</b>. New word: <b>${target}</b>`);
-    updateUI();
+  btnReset.addEventListener("click", () => {
+    resetProgress(true);
+    renderWords();
+    clearConfetti();
+    rewardEmoji.textContent = "🙂";
+    rewardEmoji.classList.remove("show");
+    rewardCaption.textContent = "Read the sentence to unlock!";
+    setStatus("neutral", `Press <b>Start</b>, then read the <b>blue</b> word.`);
   });
 
-  btnEasier.addEventListener("click", () => {
-    difficulty = (difficulty === "hard") ? "medium" : (difficulty === "medium") ? "easy" : "easy";
-    words = [...LISTS[difficulty]];
-    target = pickWord();
-    setStatus("neutral", `Difficulty: <b>${difficulty}</b>. New word: <b>${target}</b>`);
-    updateUI();
+  btnReplayReward.addEventListener("click", () => replayReward());
+
+  btnMute.addEventListener("click", () => {
+    soundOn = !soundOn;
+    btnMute.textContent = soundOn ? "🔈 Sound On" : "🔇 Sound Off";
+    if (!soundOn && audioCtx) {
+      // keep context but quiet; no need to close
+    }
   });
 
-  // Init
-  updateUI();
-  ensureRecognition();
 })();
 </script>
 </body>
