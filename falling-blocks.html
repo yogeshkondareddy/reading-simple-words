@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Word Stack (Read to Stack!)</title>
+  <style>
+    :root { color-scheme: light; }
+    html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { background: #0b1220; color: #e9eefc; display: grid; place-items: center; padding: 14px; }
+
+    .app {
+      width: min(960px, 100%);
+      display: grid;
+      gap: 14px;
+      grid-template-columns: 1.1fr 0.9fr;
+    }
+
+    @media (max-width: 860px) {
+      .app { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 18px;
+      box-shadow: 0 12px 34px rgba(0,0,0,0.35);
+      overflow: hidden;
+    }
+
+    .header {
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+    }
+
+    .title {
+      display: grid;
+      gap: 2px;
+    }
+    .title h1 { font-size: 18px; margin: 0; letter-spacing: 0.2px; }
+    .title p { font-size: 12px; margin: 0; opacity: 0.8; }
+
+    .btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    button {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.10);
+      color: #e9eefc;
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 650;
+      letter-spacing: 0.2px;
+      font-size: 13px;
+    }
+    button:hover { background: rgba(255,255,255,0.16); }
+    button:disabled {
+      opacity: 0.55; cursor: not-allowed;
+    }
+
+    .main {
+      padding: 14px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .playRow {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: 1fr;
+    }
+
+    .wordBox {
+      border-radius: 16px;
+      background: rgba(0,0,0,0.22);
+      border: 1px solid rgba(255,255,255,0.10);
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .wordLabel { font-size: 12px; opacity: 0.8; }
+
+    .word {
+      font-size: clamp(42px, 7vw, 64px);
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: 0.5px;
+      text-align: center;
+      padding: 14px 10px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.10);
+      user-select: none;
+    }
+
+    .hint {
+      display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+      opacity: 0.9;
+      font-size: 13px;
+    }
+    .pill {
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.08);
+    }
+
+    .status {
+      min-height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      font-size: 14px;
+    }
+    .status.ok { border-color: rgba(60,255,160,0.35); background: rgba(60,255,160,0.10); }
+    .status.bad { border-color: rgba(255,80,120,0.35); background: rgba(255,80,120,0.10); }
+    .status.neutral { opacity: 0.95; }
+
+    .small {
+      font-size: 12px;
+      opacity: 0.82;
+      text-align: center;
+    }
+
+    /* Stack area */
+    .stackWrap {
+      height: 520px;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      padding: 14px;
+      gap: 12px;
+    }
+
+    .stackArea {
+      border-radius: 16px;
+      background: radial-gradient(1200px 400px at 50% 100%, rgba(120,180,255,0.14), rgba(0,0,0,0.0)),
+                  rgba(0,0,0,0.18);
+      border: 1px solid rgba(255,255,255,0.12);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ground {
+      position: absolute;
+      left: 0; right: 0;
+      bottom: 0;
+      height: 56px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      border-top: 1px solid rgba(255,255,255,0.10);
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      opacity: 0.85;
+    }
+
+    .block {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(320px, 72%);
+      height: 58px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.16);
+      box-shadow: 0 10px 18px rgba(0,0,0,0.25);
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      letter-spacing: 0.4px;
+      text-transform: lowercase;
+      user-select: none;
+      transition: bottom 320ms cubic-bezier(.2,.9,.2,1), transform 320ms cubic-bezier(.2,.9,.2,1);
+    }
+
+    .block.pop {
+      transform: translateX(-50%) scale(1.04);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .stat {
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      text-align: center;
+    }
+    .stat .k { font-size: 11px; opacity: 0.8; }
+    .stat .v { font-size: 18px; font-weight: 900; margin-top: 2px; }
+    .footerNote {
+      font-size: 11px;
+      opacity: 0.78;
+      text-align: center;
+      padding: 0 14px 14px;
+    }
+
+    .warn {
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,190,60,0.28);
+      background: rgba(255,190,60,0.10);
+      font-size: 13px;
+      line-height: 1.35;
+      margin: 12px 14px 14px;
+    }
+
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="card">
+      <div class="header">
+        <div class="title">
+          <h1>Word Stack</h1>
+          <p>Read the word correctly → it becomes a block and stacks up.</p>
+        </div>
+        <div class="btns">
+          <button id="btnStart">🎙️ Start Listening</button>
+          <button id="btnStop" disabled>⏹ Stop</button>
+          <button id="btnSkip">⏭️ Skip Word</button>
+          <button id="btnReset">🔄 Reset</button>
+        </div>
+      </div>
+
+      <div class="main">
+        <div class="wordBox">
+          <div class="wordLabel">Say this word:</div>
+          <div class="word" id="targetWord">—</div>
+
+          <div class="hint">
+            <span class="pill">Tip: speak clearly and pause</span>
+            <span class="pill">We match exact word (simple cleanup)</span>
+            <span class="pill">Chrome/Edge recommended</span>
+          </div>
+
+          <div class="status neutral" id="status">Press <b>Start Listening</b>, then read the word out loud.</div>
+          <div class="small">Heard: <span class="mono" id="heardText">—</span></div>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="k">Blocks stacked</div>
+            <div class="v" id="stacksCount">0</div>
+          </div>
+          <div class="stat">
+            <div class="k">Correct</div>
+            <div class="v" id="correctCount">0</div>
+          </div>
+          <div class="stat">
+            <div class="k">Attempts</div>
+            <div class="v" id="attemptCount">0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="warn" id="supportWarn" style="display:none;">
+        Your browser doesn’t support <b>Web Speech Recognition</b>.
+        Try <b>Chrome</b> on desktop or Android. On iOS, speech recognition support can be limited.
+      </div>
+
+      <div class="footerNote">
+        Privacy note: Speech recognition runs via the browser’s speech service. Don’t use for sensitive data.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="header">
+        <div class="title">
+          <h1>Stack</h1>
+          <p>Each correct word becomes a new block.</p>
+        </div>
+        <div class="btns">
+          <button id="btnHarder">⬆️ Harder</button>
+          <button id="btnEasier">⬇️ Easier</button>
+        </div>
+      </div>
+
+      <div class="stackWrap">
+        <div class="stackArea" id="stackArea">
+          <div class="ground">Ground</div>
+        </div>
+        <div class="small">If you reach the top, you win 🎉</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // ---------- Word lists by difficulty ----------
+  const LISTS = {
+    easy: ["cat","dog","sun","hat","map","cup","pen","bed","red","run","top","box","fish","tree","moon","star"],
+    medium: ["plane","chair","smile","house","green","train","water","paper","cookie","rabbit","window","purple","banana","flower"],
+    hard: ["because","together","different","favorite","remember","beautiful","adventure","surprise","imagine","important","yesterday","tomorrow"]
+  };
+
+  let difficulty = "easy";
+  let words = [...LISTS[difficulty]];
+  let target = pickWord();
+  let stacked = [];
+  let correct = 0;
+  let attempts = 0;
+
+  const elTarget = document.getElementById("targetWord");
+  const elStatus = document.getElementById("status");
+  const elHeard = document.getElementById("heardText");
+  const elStacks = document.getElementById("stacksCount");
+  const elCorrect = document.getElementById("correctCount");
+  const elAttempts = document.getElementById("attemptCount");
+  const stackArea = document.getElementById("stackArea");
+
+  const btnStart = document.getElementById("btnStart");
+  const btnStop = document.getElementById("btnStop");
+  const btnSkip = document.getElementById("btnSkip");
+  const btnReset = document.getElementById("btnReset");
+  const btnHarder = document.getElementById("btnHarder");
+  const btnEasier = document.getElementById("btnEasier");
+
+  const supportWarn = document.getElementById("supportWarn");
+
+  // ---------- Speech Recognition ----------
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let rec = null;
+  let listening = false;
+
+  function setStatus(type, html) {
+    elStatus.className = `status ${type}`;
+    elStatus.innerHTML = html;
+  }
+
+  function normalize(s) {
+    return (s || "")
+      .toLowerCase()
+      .trim()
+      // keep letters and spaces only
+      .replace(/[^a-z\s']/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function updateUI() {
+    elTarget.textContent = target;
+    elStacks.textContent = String(stacked.length);
+    elCorrect.textContent = String(correct);
+    elAttempts.textContent = String(attempts);
+  }
+
+  function pickWord() {
+    if (words.length === 0) words = [...LISTS[difficulty]];
+    const i = Math.floor(Math.random() * words.length);
+    const w = words[i];
+    words.splice(i, 1);
+    return w;
+  }
+
+  function resetGame() {
+    stacked = [];
+    correct = 0;
+    attempts = 0;
+    clearBlocks();
+    target = pickWord();
+    elHeard.textContent = "—";
+    setStatus("neutral", `Press <b>Start Listening</b>, then read the word out loud.`);
+    updateUI();
+  }
+
+  function clearBlocks() {
+    [...stackArea.querySelectorAll(".block")].forEach(n => n.remove());
+  }
+
+  function stackBlock(word) {
+    const block = document.createElement("div");
+    block.className = "block";
+    block.textContent = word;
+
+    stackArea.appendChild(block);
+    stacked.push(word);
+
+    // Geometry
+    const groundH = 56;
+    const blockH = 58;
+    const gap = 8;
+    const idx = stacked.length - 1;
+
+    // bottom position: ground + idx*(blockH+gap)
+    const bottomPx = groundH + idx * (blockH + gap);
+    block.style.bottom = bottomPx + "px";
+
+    // little pop animation
+    block.classList.add("pop");
+    setTimeout(() => block.classList.remove("pop"), 240);
+
+    // win condition: block hits near top
+    const areaHeight = stackArea.clientHeight;
+    const topY = areaHeight - bottomPx - blockH;
+    if (topY < 20) {
+      setStatus("ok", `🏆 You reached the top! Awesome reading! Press <b>Reset</b> to play again.`);
+    }
+  }
+
+  function ensureRecognition() {
+    if (!SpeechRecognition) {
+      supportWarn.style.display = "block";
+      btnStart.disabled = true;
+      btnStop.disabled = true;
+      return false;
+    }
+    if (!rec) {
+      rec = new SpeechRecognition();
+      rec.lang = "en-US";
+      rec.interimResults = false;
+      rec.continuous = true; // keep listening
+      rec.maxAlternatives = 3;
+
+      rec.onstart = () => {
+        listening = true;
+        btnStart.disabled = true;
+        btnStop.disabled = false;
+        setStatus("neutral", `🎙️ Listening... Read: <b>${target}</b>`);
+      };
+
+      rec.onend = () => {
+        listening = false;
+        btnStart.disabled = false;
+        btnStop.disabled = true;
+        // If we didn't intentionally stop, restart for stability.
+        if (!manualStop) {
+          try { rec.start(); } catch (_) {}
+        }
+      };
+
+      rec.onerror = (e) => {
+        // Common: "not-allowed", "no-speech", "aborted", "network"
+        setStatus("bad", `⚠️ Speech error: <b>${e.error}</b>. Try again (quiet room helps).`);
+      };
+
+      rec.onresult = (evt) => {
+        // get the most recent result
+        const res = evt.results[evt.results.length - 1];
+        const best = res && res[0] ? res[0].transcript : "";
+        const norm = normalize(best);
+        elHeard.textContent = norm || "—";
+
+        // count attempt if we heard something meaningful
+        if (norm) attempts++;
+
+        const normTarget = normalize(target);
+
+        // simple matching strategy:
+        // - if exact match OR transcript contains the target as a whole word
+        const wholeWord = new RegExp(`\\b${escapeRegExp(normTarget)}\\b`, "i");
+        const ok = norm === normTarget || wholeWord.test(norm);
+
+        if (ok) {
+          correct++;
+          setStatus("ok", `✅ Correct! You said: <b>${escapeHtml(best)}</b>`);
+          stackBlock(target);
+          target = pickWord();
+          setTimeout(() => {
+            if (stacked.length === 0) return;
+            // Don't overwrite win message
+            if (!elStatus.innerHTML.includes("🏆")) {
+              setStatus("neutral", `Next word: <b>${target}</b>`);
+            }
+            updateUI();
+          }, 250);
+        } else {
+          setStatus("bad", `❌ Not quite. Try again. You said: <b>${escapeHtml(best)}</b>`);
+          updateUI();
+        }
+      };
+    }
+    return true;
+  }
+
+  function escapeRegExp(s) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  let manualStop = false;
+
+  btnStart.addEventListener("click", async () => {
+    if (!ensureRecognition()) return;
+    manualStop = false;
+
+    // iOS sometimes requires user gesture (this click is good) + https in hosted pages
+    try {
+      rec.start();
+    } catch (e) {
+      // start() can throw if already started
+      setStatus("bad", `⚠️ Couldn't start listening. If it says "not-allowed", allow microphone permissions.`);
+    }
+  });
+
+  btnStop.addEventListener("click", () => {
+    if (!rec) return;
+    manualStop = true;
+    try { rec.stop(); } catch (_) {}
+    setStatus("neutral", `Stopped. Press <b>Start Listening</b> to continue.`);
+  });
+
+  btnSkip.addEventListener("click", () => {
+    target = pickWord();
+    elHeard.textContent = "—";
+    setStatus("neutral", `Skipped. New word: <b>${target}</b>`);
+    updateUI();
+  });
+
+  btnReset.addEventListener("click", () => resetGame());
+
+  btnHarder.addEventListener("click", () => {
+    difficulty = (difficulty === "easy") ? "medium" : (difficulty === "medium") ? "hard" : "hard";
+    words = [...LISTS[difficulty]];
+    target = pickWord();
+    setStatus("neutral", `Difficulty: <b>${difficulty}</b>. New word: <b>${target}</b>`);
+    updateUI();
+  });
+
+  btnEasier.addEventListener("click", () => {
+    difficulty = (difficulty === "hard") ? "medium" : (difficulty === "medium") ? "easy" : "easy";
+    words = [...LISTS[difficulty]];
+    target = pickWord();
+    setStatus("neutral", `Difficulty: <b>${difficulty}</b>. New word: <b>${target}</b>`);
+    updateUI();
+  });
+
+  // Init
+  updateUI();
+  ensureRecognition();
+})();
+</script>
+</body>
+</html>
