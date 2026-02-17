@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Multiplication Mouse Game</title>
+<title>Math Mouse Game</title>
 
 <style>
 
@@ -150,7 +150,18 @@
 
 <div id="game">
 
-  <h1>🐭 Math Mouse × 🧀</h1>
+  <h1>🐭 Math Mouse 🧀</h1>
+
+  <!-- Operation picker -->
+  <div style="margin-bottom:12px;">
+    <label for="opSelect" style="font-size:18px;font-weight:bold;">Operation:</label>
+    <select id="opSelect" style="font-size:18px;padding:6px 12px;border-radius:8px;border:2px solid #4caf50;margin-left:6px;">
+      <option value="+" selected>➕ Addition</option>
+      <option value="-">➖ Subtraction</option>
+      <option value="×">✖️ Multiplication</option>
+      <option value="÷">➗ Division</option>
+    </select>
+  </div>
 
   <!-- Path -->
   <div id="path"></div>
@@ -182,6 +193,18 @@
 
 const TOTAL_BLOCKS = 10;
 const MAX_NUM = 12;
+
+const opSelect = document.getElementById("opSelect");
+
+opSelect.addEventListener("change", () => {
+  // restart game on operation change
+  position = 0;
+  gameOver = false;
+  input.disabled = false;
+  checkBtn.disabled = false;
+  buildPath();
+  newQuestion();
+});
 
 
 /* ===============================
@@ -284,13 +307,39 @@ function newQuestion() {
 
   if (gameOver) return;
 
-  num1 = randomNum();
-  num2 = randomNum();
+  const op = opSelect.value;
 
-  correctAnswer = num1 * num2;
+  switch (op) {
+    case "+":
+      num1 = randomNum();
+      num2 = randomNum();
+      correctAnswer = num1 + num2;
+      break;
 
-  questionDiv.textContent =
-    `${num1} × ${num2} = ?`;
+    case "-":
+      // ensure num1 >= num2 so result is non-negative
+      num1 = randomNum();
+      num2 = randomNum();
+      if (num1 < num2) { const t = num1; num1 = num2; num2 = t; }
+      correctAnswer = num1 - num2;
+      break;
+
+    case "×":
+      num1 = randomNum();
+      num2 = randomNum();
+      correctAnswer = num1 * num2;
+      break;
+
+    case "÷":
+      // pick divisor and quotient, then multiply to get dividend
+      num2 = Math.floor(Math.random() * 11) + 1; // 1-11 divisor
+      const quotient = Math.floor(Math.random() * 12) + 1; // 1-12 result
+      num1 = num2 * quotient;
+      correctAnswer = quotient;
+      break;
+  }
+
+  questionDiv.textContent = `${num1} ${op} ${num2} = ?`;
 
   input.value = "";
   input.focus();
