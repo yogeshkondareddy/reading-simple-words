@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Word Builder (3–4 Letter Words)</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+
+    body {
+      margin: 0;
+      background: #f6f7fb;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+    }
+
+    /* Full-page feel */
+    .wrap {
+      width: min(1100px, 96vw);
+      height: min(720px, 92vh);
+      padding: 14px;
+    }
+
+    .card {
+      height: 100%;
+      background: #fff;
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 10px 28px rgba(0,0,0,.10);
+      display: grid;
+      grid-template-rows: auto 1fr auto auto;
+      gap: 14px;
+    }
+
+    h1 { margin: 0 0 4px; font-size: 26px; }
+    p { margin: 0; color: #444; }
+
+    .top {
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 14px;
+      align-items: stretch;
+      min-height: 0; /* allows children to size within grid */
+    }
+
+    @media (max-width: 820px) {
+      .wrap { height: auto; }
+      .card { height: auto; }
+      .top { grid-template-columns: 1fr; }
+    }
+
+    .prompt {
+      border: 2px dashed #d8dbe6;
+      border-radius: 16px;
+      padding: 14px;
+      background: #fbfbff;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 10px;
+      min-height: 0;
+    }
+
+    .big-emoji {
+      font-size: clamp(56px, 10vh, 110px);
+      line-height: 1;
+      align-self: start;
+    }
+
+    .hint {
+      font-size: 15px;
+      color: #555;
+      align-self: end;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #3730a3;
+      font-weight: 800;
+      font-size: 13px;
+      width: fit-content;
+    }
+
+    .answer {
+      border: 2px solid #e7e9f2;
+      border-radius: 16px;
+      padding: 14px;
+      display: grid;
+      grid-template-rows: auto auto auto 1fr;
+      gap: 10px;
+      min-height: 0;
+    }
+
+    /* Keep slots on the SAME LINE */
+    .slots {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: nowrap;          /* key fix */
+      overflow-x: auto;           /* safety for tiny screens */
+      padding-bottom: 4px;
+    }
+
+    .slot {
+      flex: 0 0 auto;
+      width: 74px;
+      height: 74px;
+      border-radius: 16px;
+      border: 2px solid #d8dbe6;
+      background: #ffffff;
+      display: grid;
+      place-items: center;
+      font-size: 34px;
+      font-weight: 900;
+      user-select: none;
+    }
+
+    @media (max-width: 420px) {
+      .slot { width: 62px; height: 62px; font-size: 30px; }
+    }
+
+    .slot.filled { border-color: #b8c0ff; background: #f3f4ff; }
+
+    .letters {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-content: start;
+    }
+
+    .btn-letter {
+      min-width: 74px;
+      height: 58px;
+      border-radius: 16px;
+      border: 2px solid #e7e9f2;
+      background: #fff;
+      font-size: 24px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform .06s ease;
+    }
+
+    .btn-letter:active { transform: scale(.98); }
+    .btn-letter[disabled] { opacity: .35; cursor: not-allowed; }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .controls { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    button.action {
+      height: 46px;
+      padding: 0 16px;
+      border-radius: 14px;
+      border: 0;
+      background: #111827;
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    button.action.secondary { background: #e5e7eb; color: #111827; }
+    button.action:active { transform: scale(.99); }
+
+    .status {
+      font-weight: 900;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #f3f4f6;
+      color: #111827;
+      min-width: min(520px, 100%);
+      box-sizing: border-box;
+    }
+
+    .status.good { background: #ecfdf5; color: #065f46; }
+    .status.bad  { background: #fef2f2; color: #991b1b; }
+
+    .shake { animation: shake .28s linear; }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20% { transform: translateX(-7px); }
+      40% { transform: translateX(7px); }
+      60% { transform: translateX(-6px); }
+      80% { transform: translateX(6px); }
+    }
+
+    .mini { font-size: 13px; color: #555; }
+  </style>
+</head>
+<body>
+  <a href="index.html" style="position:fixed;top:20px;right:20px;background:#4caf50;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:18px;cursor:pointer;text-decoration:none;box-shadow:0 2px 5px rgba(0,0,0,0.2);z-index:99;">🏠 Menu</a>
+  <div class="wrap">
+    <div class="card">
+      <div>
+        <h1>Word Builder</h1>
+        <p>Tap letters to build the word (3–4 letters). Use <b>Backspace</b> to remove the last letter. Press <b>Enter</b> to check.</p>
+      </div>
+
+      <div class="top">
+        <div class="prompt" aria-live="polite">
+          <div class="pill" id="levelPill">Word 1</div>
+          <div class="big-emoji" id="emoji">🐱</div>
+          <div class="hint" id="hint">Hint: A small pet that says “meow”.</div>
+        </div>
+
+        <div class="answer">
+          <div><b>Your Word</b></div>
+          <div class="slots" id="slots"></div>
+          <div><b>Letters</b></div>
+          <div class="letters" id="letters"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="controls">
+          <button class="action secondary" id="clearBtn" type="button">Clear</button>
+          <button class="action secondary" id="shuffleBtn" type="button">Shuffle</button>
+          <button class="action" id="checkBtn" type="button">Check</button>
+          <button class="action" id="nextBtn" type="button" style="display:none;">Next</button>
+        </div>
+        <div class="status" id="status">Build the word, then press Check.</div>
+      </div>
+
+      <div class="mini">Tip: Edit the word list in the code (look for <code>WORDS</code>).</div>
+    </div>
+  </div>
+
+  <script>
+    // Simple 3–4 letter words + emoji + hint
+    const WORDS = [
+      { word: "CAT",  emoji: "🐱", hint: "A small pet that says “meow”." },
+      { word: "DOG",  emoji: "🐶", hint: "A pet that barks." },
+      { word: "SUN",  emoji: "☀️", hint: "It shines in the sky during the day." },
+      { word: "MOON", emoji: "🌙", hint: "You see it in the night sky." },
+      { word: "FISH", emoji: "🐟", hint: "An animal that swims in water." },
+      { word: "BIRD", emoji: "🐦", hint: "An animal that can fly." },
+      { word: "TREE", emoji: "🌳", hint: "A tall plant with a trunk." },
+      { word: "BOOK", emoji: "📘", hint: "You read it." },
+      { word: "BALL", emoji: "⚽️", hint: "You kick or throw it to play." },
+      { word: "CAKE", emoji: "🍰", hint: "A sweet treat for birthdays." },
+      { word: "MILK", emoji: "🥛", hint: "A drink that comes from cows." },
+      { word: "SHIP", emoji: "🚢", hint: "A big boat on the sea." }
+    ];
+
+    // DOM
+    const emojiEl = document.getElementById("emoji");
+    const hintEl = document.getElementById("hint");
+    const slotsEl = document.getElementById("slots");
+    const lettersEl = document.getElementById("letters");
+    const statusEl = document.getElementById("status");
+    const levelPill = document.getElementById("levelPill");
+
+    const clearBtn = document.getElementById("clearBtn");
+    const shuffleBtn = document.getElementById("shuffleBtn");
+    const checkBtn = document.getElementById("checkBtn");
+    const nextBtn = document.getElementById("nextBtn");
+
+    // ===== Sounds (no files) =====
+    let audioCtx = null;
+    function ensureAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+    }
+
+    function beep(freq, durationMs, type = "sine", gain = 0.08, when = 0) {
+      ensureAudio();
+      const t0 = audioCtx.currentTime + when;
+
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, t0);
+
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(gain, t0 + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + durationMs / 1000);
+
+      osc.connect(g).connect(audioCtx.destination);
+      osc.start(t0);
+      osc.stop(t0 + durationMs / 1000 + 0.02);
+    }
+
+    function playCorrectSound() {
+      // cheerful little chord
+      beep(523.25, 140, "triangle", 0.08, 0.00); // C5
+      beep(659.25, 140, "triangle", 0.07, 0.02); // E5
+      beep(783.99, 160, "triangle", 0.06, 0.04); // G5
+    }
+
+    function playWrongSound() {
+      // short "buzz" / downward tone
+      beep(220, 120, "sawtooth", 0.06, 0.00);
+      beep(165, 140, "sawtooth", 0.05, 0.05);
+    }
+
+    // State
+    let index = 0;
+    let target = "";
+    let picked = [];      // letters chosen in order
+    let available = [];   // {ch, used}
+
+    function randInt(n){ return Math.floor(Math.random() * n); }
+
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = randInt(i + 1);
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function setStatus(msg, kind) {
+      statusEl.className = "status" + (kind ? " " + kind : "");
+      statusEl.textContent = msg;
+    }
+
+    function renderSlots() {
+      slotsEl.innerHTML = "";
+      for (let i = 0; i < target.length; i++) {
+        const d = document.createElement("div");
+        d.className = "slot" + (picked[i] ? " filled" : "");
+        d.textContent = picked[i] || "";
+        slotsEl.appendChild(d);
+      }
+    }
+
+    function renderLetters() {
+      lettersEl.innerHTML = "";
+      available.forEach((item, i) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "btn-letter";
+        b.textContent = item.ch;
+        b.disabled = item.used;
+        b.addEventListener("click", () => pickLetter(i));
+        lettersEl.appendChild(b);
+      });
+    }
+
+    function pickLetter(letterIndex) {
+      // user gesture -> allow sounds to work on mobile
+      ensureAudio();
+
+      if (picked.length >= target.length) return;
+      if (available[letterIndex].used) return;
+
+      available[letterIndex].used = true;
+      picked.push(available[letterIndex].ch);
+
+      renderSlots();
+      renderLetters();
+
+      if (picked.length === target.length) {
+        setStatus("Nice! Press Check.", "");
+      }
+    }
+
+    function clearWord() {
+      ensureAudio();
+      picked = [];
+      available.forEach(x => x.used = false);
+      renderSlots();
+      renderLetters();
+      setStatus("Cleared. Build the word again.", "");
+      nextBtn.style.display = "none";
+      checkBtn.style.display = "";
+    }
+
+    function shuffleLetters() {
+      ensureAudio();
+      const chars = target.split("");
+      shuffleArray(chars);
+      available = chars.map(ch => ({ ch, used: false }));
+      picked = [];
+      renderSlots();
+      renderLetters();
+      setStatus("Shuffled! Build the word.", "");
+      nextBtn.style.display = "none";
+      checkBtn.style.display = "";
+    }
+
+    function checkAnswer() {
+      ensureAudio();
+
+      if (picked.length !== target.length) {
+        setStatus("Add all letters first 🙂", "bad");
+        playWrongSound();
+        return;
+      }
+
+      const guess = picked.join("");
+      if (guess === target) {
+        setStatus("✅ Correct! Great job!", "good");
+        playCorrectSound();
+        nextBtn.style.display = "";
+        checkBtn.style.display = "none";
+      } else {
+        setStatus("❌ Not quite. Try again!", "bad");
+        playWrongSound();
+        slotsEl.classList.remove("shake");
+        void slotsEl.offsetWidth; // restart animation
+        slotsEl.classList.add("shake");
+      }
+    }
+
+    function nextWord() {
+      ensureAudio();
+      index = (index + 1) % WORDS.length;
+      loadWord();
+    }
+
+    function loadWord() {
+      const item = WORDS[index];
+      target = item.word.toUpperCase();
+      emojiEl.textContent = item.emoji;
+      hintEl.textContent = "Hint: " + item.hint;
+      levelPill.textContent = `Word ${index + 1} of ${WORDS.length}`;
+
+      const chars = target.split("");
+      shuffleArray(chars);
+      available = chars.map(ch => ({ ch, used: false }));
+      picked = [];
+
+      renderSlots();
+      renderLetters();
+      setStatus("Build the word, then press Check.", "");
+      nextBtn.style.display = "none";
+      checkBtn.style.display = "";
+    }
+
+    function removeLastLetter() {
+      ensureAudio();
+      if (picked.length === 0) return;
+      const last = picked.pop();
+
+      // Re-enable one used instance of that letter
+      for (let i = available.length - 1; i >= 0; i--) {
+        if (available[i].ch === last && available[i].used) {
+          available[i].used = false;
+          break;
+        }
+      }
+
+      renderSlots();
+      renderLetters();
+      setStatus("Removed one letter.", "");
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Backspace") {
+        e.preventDefault();
+        removeLastLetter();
+      }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        checkAnswer();
+      }
+    });
+
+    // Buttons
+    clearBtn.addEventListener("click", clearWord);
+    shuffleBtn.addEventListener("click", shuffleLetters);
+    checkBtn.addEventListener("click", checkAnswer);
+    nextBtn.addEventListener("click", nextWord);
+
+    loadWord();
+  </script>
+</body>
+</html>
